@@ -237,6 +237,12 @@ class TextInput {
     }
   }
 
+  void _setEditingState(TextEditingValue value) {
+    for (final control in _textInputControls) {
+      control.setEditingState(value);
+    }
+  }
+
   void _show() {
     for (final control in _textInputControls) {
       control.show();
@@ -331,6 +337,14 @@ class TextInputConnection {
   void hide() {
     assert(attached, "Cannot hide a TextInputConnection that is not attached.");
     TextInput._instance._hide();
+  }
+
+  void setEditingState(TextEditingValue value) {
+    assert(
+      attached,
+      "Cannot set editing state on a TextInputConnection that is not attached.",
+    );
+    TextInput._instance._setEditingState(value);
   }
 }
 
