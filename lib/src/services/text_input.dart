@@ -11,6 +11,7 @@ enum TextInputAction {
   send,
   next,
   previous,
+  newline,
 }
 
 @immutable
