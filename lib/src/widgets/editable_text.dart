@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:flutter/material.dart' show Colors, Material, InkWell;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:my_basic_textfield/src/services/text_editing.dart'

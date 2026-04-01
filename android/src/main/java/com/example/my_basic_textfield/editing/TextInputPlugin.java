@@ -1,7 +1,7 @@
 package com.example.my_basic_textfield.editing;
 
 import static io.flutter.Build.API_LEVELS;
-
+import java.util.ArrayList;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
@@ -23,7 +23,6 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.plugin.platform.PlatformViewsController2;
 import com.example.my_basic_textfield.editing.models.InputTarget;
-import com.example.my_basic_textfield.editing.models.InputConfiguration;
 
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
   private static final String TAG = "TextInputPlugin";
@@ -44,7 +43,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
 
   @Nullable
-  private InputConfiguration configuration;
+  private TextInputChannel.Configuration configuration;
 
   @NonNull
   private ListenableEditingState mEditable;
@@ -139,9 +138,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     this.scribeChannel = scribeChannel;
     this.platformViewsController = platformViewsController;
-    this.platformViewsController.attachTextInputPlugin(this);
+    android.util.Log.d(TAG, "Platform views controllers initialized");
     this.platformViewsController2 = platformViewsController2;
-    this.platformViewsController2.attachTextInputPlugin(this);
 
     android.util.Log.d(TAG, "TextInputPlugin created");
   }
@@ -178,25 +176,25 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   }
 
   private static int inputTypeFromTextInputType(
-      @NonNull InputConfiguration.InputType type,
+      @NonNull String type,
       boolean obscureText,
       boolean autocorrect,
       boolean enableSuggestions,
       boolean enableIMEPersonalizedLearning,
-      @Nullable InputConfiguration.TextCapitalization textCapitalization) {
+      @Nullable String textCapitalization) {
     
     android.util.Log.d(TAG, "inputTypeFromTextInputType: type=" + type + 
         ", obscureText=" + obscureText);
 
     switch (type) {
-      case DATETIME:
+      case "datetime":
         return InputType.TYPE_CLASS_DATETIME;
-      case NUMBER:
+      case "number":
         int textType = InputType.TYPE_CLASS_NUMBER;
         return textType;
-      case PHONE:
+      case "phone":
         return InputType.TYPE_CLASS_PHONE;
-      case NONE:
+      case "none":
         return InputType.TYPE_NULL;
       default:
         break;
@@ -204,17 +202,17 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     int textType = InputType.TYPE_CLASS_TEXT;
     
-    if (type == InputConfiguration.InputType.MULTILINE) {
+    if (type.equals("multiline")) {
       textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
-    } else if (type == InputConfiguration.InputType.EMAIL_ADDRESS) {
+    } else if (type.equals("emailAddress")) {
       textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-    } else if (type == InputConfiguration.InputType.URL) {
+    } else if (type.equals("url")) {
       textType |= InputType.TYPE_TEXT_VARIATION_URI;
-    } else if (type == InputConfiguration.InputType.VISIBLE_PASSWORD) {
+    } else if (type.equals("visiblePassword")) {
       textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
-    } else if (type == InputConfiguration.InputType.NAME) {
+    } else if (type.equals("name")) {
       textType |= InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
-    } else if (type == InputConfiguration.InputType.POSTAL_ADDRESS) {
+    } else if (type.equals("address")) {
       textType |= InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS;
     }
 
@@ -231,11 +229,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       }
     }
 
-    if (textCapitalization == InputConfiguration.TextCapitalization.CHARACTERS) {
+    if ("characters".equals(textCapitalization)) {
       textType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
-    } else if (textCapitalization == InputConfiguration.TextCapitalization.WORDS) {
+    } else if ("words".equals(textCapitalization)) {
       textType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
-    } else if (textCapitalization == InputConfiguration.TextCapitalization.SENTENCES) {
+    } else if ("sentences".equals(textCapitalization)) {
       textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
     }
 
@@ -248,14 +246,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     
     android.util.Log.d(TAG, "createInputConnection: inputTarget=" + inputTarget);
 
-    // ✅ Check if inputTarget is valid
     if (inputTarget.type == InputTarget.Type.NO_TARGET) {
       lastInputConnection = null;
       android.util.Log.w(TAG, "createInputConnection: NO_TARGET, returning null");
       return null;
     }
 
-    // ✅ Handle platform view cases
     if (inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW) {
       android.util.Log.d(TAG, "createInputConnection: PHYSICAL_DISPLAY_PLATFORM_VIEW");
       return null;
@@ -272,27 +268,25 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return lastInputConnection;
     }
 
-    // ✅ Check if configuration is null BEFORE using it
     if (configuration == null) {
       android.util.Log.e(TAG, "createInputConnection: configuration is null!");
       return null;
     }
 
-    // ✅ Check if inputType is null BEFORE using it
-    if (configuration.inputType == null) {
+String inputType = configuration.inputType.type.name().toLowerCase();
+    if (inputType == null) {
       android.util.Log.e(TAG, "createInputConnection: configuration.inputType is null!");
       return null;
     }
 
-    // Now it's safe to use configuration
     outAttrs.inputType =
-        inputTypeFromTextInputType(
-            configuration.inputType,
-            configuration.obscureText,
-            configuration.autocorrect,
-            configuration.enableSuggestions,
-            configuration.enableIMEPersonalizedLearning,
-            configuration.textCapitalization);
+    inputTypeFromTextInputType(
+        inputType,
+        configuration.obscureText,
+        configuration.autocorrect,
+        configuration.enableSuggestions,
+        configuration.enableIMEPersonalizedLearning,
+        configuration.textCapitalization.name().toLowerCase());
     
     outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
 
@@ -360,9 +354,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   void showTextInput(View view) {
     android.util.Log.d(TAG, "showTextInput");
 
-    if (configuration == null
-        || configuration.inputType == null
-        || configuration.inputType != InputConfiguration.InputType.NONE) {
+   if (configuration == null
+    || configuration.inputType == null
+    || "none".equals(configuration.inputType.type)) {
       view.requestFocus();
       mImm.showSoftInput(view, 0);
     } else {
@@ -380,6 +374,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     android.util.Log.d(TAG, "setTextInputClient: client=" + client + 
         ", config=" + configuration);
 
+    // ✅ FIXED: Now using TextInputChannel.Configuration
     this.configuration = configuration;
     
     inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);

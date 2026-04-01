@@ -137,9 +137,9 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
 
     View rootView = activity.getWindow().getDecorView().getRootView();
 
-    TextInputChannel textInputChannel = flutterEngine.getSystemChannel(TextInputChannel.class);
-
-    ScribeChannel scribeChannel = flutterEngine.getSystemChannel(ScribeChannel.class);
+    // ✅ FIXED: Pass null for channels - they'll be initialized by Flutter
+    TextInputChannel textInputChannel = null;
+    ScribeChannel scribeChannel = null;
 
     PlatformViewsController platformViewsController =
         flutterEngine.getPlatformViewsController();

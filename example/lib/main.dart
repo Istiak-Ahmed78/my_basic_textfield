@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🎨 MyApp: Building');
     return MaterialApp(
       title: 'My Basic TextField Demo',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
@@ -30,50 +31,106 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
   late TextEdittingController _controller;
   String _displayText = 'No text entered yet';
   String _selectionInfo = 'No selection';
+  String _keyboardStatus = 'Keyboard: Unknown';
+  String _cursorStatus = 'Cursor: Not visible';
+  int _textChangeCount = 0;
+  int _selectionChangeCount = 0;
 
   @override
   void initState() {
+    debugPrint('📱 TextFieldDemoPage: initState() called');
     super.initState();
+
     _controller = TextEdittingController(null);
+    debugPrint('✅ TextEdittingController created');
 
     // Listen to text changes
     _controller.addListener(() {
+      debugPrint('\n🔄 ========== CONTROLLER LISTENER TRIGGERED ==========');
+      debugPrint('📝 Text Change #${++_textChangeCount}');
+      debugPrint('📄 Current text: "${_controller.text}"');
+      debugPrint('📏 Text length: ${_controller.text.length}');
+
+      final selection = _controller.selection;
+      debugPrint('🎯 Selection object: $selection');
+      debugPrint('   - baseOffset: ${selection.baseOffset}');
+      debugPrint('   - extentOffset: ${selection.extentOffset}');
+      debugPrint('   - start: ${selection.start}');
+      debugPrint('   - end: ${selection.end}');
+      debugPrint('   - isCollapsed: ${selection.isCollapsed}');
+      // debugPrint('   - hasSelection: ${selection.hasSelection}');
+
       setState(() {
         _displayText = _controller.text.isEmpty
             ? 'No text entered yet'
             : _controller.text;
 
-        final selection = _controller.selection;
         _selectionInfo =
             'Cursor: ${selection.baseOffset} | '
-            'Selection: ${selection.start}-${selection.end}';
+            'Selection: ${selection.start}-${selection.end} | '
+            'Collapsed: ${selection.isCollapsed}';
+
+        _cursorStatus = 'Cursor Position: ${selection.baseOffset}';
+        _selectionChangeCount++;
+
+        debugPrint('🎨 UI State updated');
+        debugPrint('   - _displayText: $_displayText');
+        debugPrint('   - _selectionInfo: $_selectionInfo');
+        debugPrint('   - _selectionChangeCount: $_selectionChangeCount');
       });
+      debugPrint('🔄 ========== LISTENER END ==========\n');
     });
+
+    debugPrint('✅ Listener attached to controller');
   }
 
   @override
   void dispose() {
+    debugPrint('🗑️ TextFieldDemoPage: dispose() called');
+    debugPrint('📊 Final Stats:');
+    debugPrint('   - Total text changes: $_textChangeCount');
+    debugPrint('   - Total selection changes: $_selectionChangeCount');
     _controller.dispose();
+    debugPrint('✅ Controller disposed');
     super.dispose();
   }
 
   void _clearText() {
+    debugPrint('\n🧹 ========== CLEAR TEXT BUTTON PRESSED ==========');
+    debugPrint('📝 Before clear: "${_controller.text}"');
     _controller.clear();
+    debugPrint('📝 After clear: "${_controller.text}"');
+    debugPrint('🧹 ========== CLEAR END ==========\n');
   }
 
   void _setTextProgrammatically() {
+    debugPrint('\n✏️ ========== SET TEXT BUTTON PRESSED ==========');
+    debugPrint('📝 Before set: "${_controller.text}"');
     _controller.text = 'Hello from Flutter!';
+    debugPrint('📝 After set: "${_controller.text}"');
+    debugPrint('🎯 Selection after set: ${_controller.selection}');
+    debugPrint('✏️ ========== SET TEXT END ==========\n');
   }
 
   void _selectAll() {
+    debugPrint('\n📋 ========== SELECT ALL BUTTON PRESSED ==========');
+    debugPrint('📝 Text: "${_controller.text}"');
+    debugPrint('📏 Text length: ${_controller.text.length}');
+    debugPrint('🎯 Before selection: ${_controller.selection}');
+
     _controller.selection = TextSelection(
       baseOffset: 0,
       extentOffset: _controller.text.length,
     );
+
+    debugPrint('🎯 After selection: ${_controller.selection}');
+    debugPrint('📋 ========== SELECT ALL END ==========\n');
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🎨 TextFieldDemoPage: build() called');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Basic TextField Demo'),
@@ -90,6 +147,65 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
                 'Custom Text Field Example',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Debug Status Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  border: Border.all(color: Colors.purple.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Debug Status:',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _keyboardStatus,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Courier',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _cursorStatus,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Courier',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Text Changes: $_textChangeCount',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Courier',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Selection Changes: $_selectionChangeCount',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Courier',
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -158,8 +274,9 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
                   obscureText: false,
                   isMultiline: false,
                   onChanged: (value) {
-                    // Optional: Handle text changes
-                    debugPrint('Text changed: $value');
+                    debugPrint('🎯 EditableText.onChanged() called');
+                    debugPrint('   - New value: "$value"');
+                    debugPrint('   - Value length: ${value.length}');
                   },
                 ),
               ),

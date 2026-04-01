@@ -37,9 +37,9 @@ public class ListenableEditingState extends SpannableStringBuilder implements Te
   public ListenableEditingState(@Nullable String text, @NonNull View view) {
     super(text != null ? text : "");
     
-    addTextChangedListener(this);
-    
-    android.util.Log.d(TAG, "ListenableEditingState created with text: '" + getText() + "'");
+    // ✅ FIXED: Don't call addTextChangedListener - SpannableStringBuilder doesn't have it
+    // Just log the creation
+    android.util.Log.d(TAG, "ListenableEditingState created with text: '" + toString() + "'");
   }
 
   public void addEditingStateListener(@NonNull EditingStateWatcher watcher) {
