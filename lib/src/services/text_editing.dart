@@ -1,4 +1,3 @@
-
 import 'package:flutter/services.dart';
 
 class TextSelection extends TextRange {
@@ -14,8 +13,10 @@ class TextSelection extends TextRange {
     this.affinity = TextAffinity.downstream,
     this.isDirectional = false,
   }) : super(start: baseOffset, end: extentOffset);
+  @override
+  bool get isValid => baseOffset >= 0 && extentOffset >= 0;
 
-  TextSelection.collapsed({
+  const TextSelection.collapsed({
     required int offset,
     this.affinity = TextAffinity.downstream,
   }) : baseOffset = offset,

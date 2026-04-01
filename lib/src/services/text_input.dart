@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart'
-    hide TextInputType, TextInputAction, TextEditingValue;
+    hide TextInputType, TextInputAction, TextEditingValue, TextSelection;
+import 'package:my_basic_textfield/src/services/text_editing.dart'
+    show TextSelection;
+
+final Map<int, TextInputClient> _textInputClients = {};
 
 enum TextInputAction {
   none,
@@ -12,6 +16,27 @@ enum TextInputAction {
   next,
   previous,
   newline,
+}
+
+mixin TextSelectionDelegate {
+  TextEditingValue get textEditingValue;
+  void hideToolbar([bool hideHandles = true]);
+
+  /// Whether cut is enabled.
+  bool get cutEnabled => true;
+
+  /// Whether copy is enabled.
+  bool get copyEnabled => true;
+
+  /// Whether paste is enabled.
+  bool get pasteEnabled => true;
+
+  /// Whether select all is enabled.
+  bool get selectAllEnabled => true;
+  void cutSelection(SelectionChangedCause cause);
+  Future<void> pasteText(SelectionChangedCause cause);
+  void selectAll(SelectionChangedCause cause);
+  void copySelection(SelectionChangedCause cause);
 }
 
 @immutable
@@ -306,7 +331,7 @@ class TextInput {
       final String mimeType = call.arguments["mimeType"];
       final Uint8List data = call.arguments["data"];
       _textInputClients[id]?.insertContent(
-        KeyboardInsertedContent(mimeType: mimeType, data: data),
+        KeyboardInsertedContent(mimeType: mimeType, data: data, uri: ""),
       );
     } else {
       _loudlyHandleTextInputMethodCall(call);
@@ -315,7 +340,9 @@ class TextInput {
 }
 
 class TextInputConnection {
-  TextInputConnection._(this.client) : id = _nextID++;
+  TextInputConnection._(this.client) : id = _nextID++ {
+    _textInputClients[id] = client;
+  }
   TextInputClient client;
   int id;
 
@@ -327,6 +354,7 @@ class TextInputConnection {
   void close() {
     if (_closed) return;
     _closed = true;
+    _textInputClients.remove(id);
     client.closeConnection();
   }
 

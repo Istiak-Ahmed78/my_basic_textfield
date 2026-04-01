@@ -1,7 +1,17 @@
 import 'dart:async';
-import 'package:flutter/material.dart' show Colors;
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+import 'package:flutter/material.dart' show Colors, Material, InkWell;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:my_basic_textfield/src/services/text_editing.dart'
+    show TextSelection;
 import 'package:flutter/widgets.dart'
-    hide TextInputType, TextEditingValue, TextSelectionOverlay;
+    hide
+        TextInputType,
+        TextEditingValue,
+        TextSelectionOverlay,
+        TextSelectionDelegate,
+        TextSelectionPoint,
+        TextSelection;
 import 'package:my_basic_textfield/src/widgets/text_selection_overlay.dart';
 import 'package:my_basic_textfield/src/services/text_input.dart'
     show
@@ -11,7 +21,8 @@ import 'package:my_basic_textfield/src/services/text_input.dart'
         TextInputAction,
         TextEditingValue,
         TextInput,
-        TextInputConfiguration;
+        TextInputConfiguration,
+        TextSelectionDelegate;
 
 class TextEdittingController extends ValueNotifier<TextEditingValue> {
   TextEdittingController(String? text)
@@ -76,7 +87,10 @@ class EditableText extends StatefulWidget {
 }
 
 class _EditableTextState extends State<EditableText>
-    with TickerProviderStateMixin<EditableText>, TextInputClient {
+    with
+        TickerProviderStateMixin<EditableText>,
+        TextInputClient,
+        TextSelectionDelegate {
   late TextEdittingController _controller;
   late FocusNode _focusNode;
 
@@ -224,8 +238,11 @@ class _EditableTextState extends State<EditableText>
       startHandleLayerLink: LayerLink(),
       endHandleLayerLink: LayerLink(),
       renderObject: null,
-      selectionControls: null,
+      selectionControls: _SelectionOverlayControls(),
       selectionDelegate: this,
+      onSelectionHandleUpdate: (newPosition) {
+        _handleSelectionChanged(newPosition, SelectionChangedCause.drag);
+      },
     );
   }
 
@@ -250,6 +267,12 @@ class _EditableTextState extends State<EditableText>
 
     _selectionOverlay ??= _createSelectionOverlay();
     _selectionOverlay?.update(_value);
+    if (selection.isCollapsed) {
+      _selectionOverlay?.hide();
+      _selectionOverlay = null;
+    } else {
+      _selectionOverlay?.showToolbar();
+    }
   }
 
   void _showKeyboard() {
@@ -463,6 +486,8 @@ class _EditableTextState extends State<EditableText>
             selectionEnd: _value.selection.end,
             cursorOpacity: cursorOpacity,
             obscureText: widget.obscureText,
+            cursorColor: widget.cursorColor ?? Colors.blue,
+            cursorWidth: widget.cursorWidth,
           ),
           size: Size.infinite,
           child: Container(
@@ -476,6 +501,100 @@ class _EditableTextState extends State<EditableText>
       ),
     );
   }
+
+  @override
+  void bringIntoView(TextPosition position) {
+    // TODO: implement bringIntoView
+  }
+  @override
+  void hideToolbar([bool hideHandles = true]) {
+    _hideToolbar();
+  }
+
+  @override
+  void copySelection(SelectionChangedCause cause) {
+    if (_value.selection.isCollapsed) return;
+    final _selectedText = _value.text.substring(
+      _value.selection.start,
+      _value.selection.end,
+    );
+    Clipboard.setData(ClipboardData(text: _selectedText));
+    _hideToolbar();
+  }
+
+  @override
+  void cutSelection(SelectionChangedCause cause) {
+    if (_value.selection.isCollapsed) return;
+    final selectedText = _value.text.substring(
+      _value.selection.start,
+      _value.selection.end,
+    );
+    Clipboard.setData(ClipboardData(text: selectedText));
+
+    final newText = _value.text.replaceRange(
+      _value.selection.start,
+      _value.selection.end,
+      '',
+    );
+    _value = _value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: _value.selection.start),
+    );
+    widget.onChanged?.call(newText);
+    _hideToolbar();
+  }
+
+  @override
+  Future<void> pasteText(SelectionChangedCause cause) async {
+    final clibBoardData = await Clipboard.getData('text/plain');
+    if (clibBoardData == null || clibBoardData.text == null) return;
+    final currentTextEdittingValue = _value;
+    int currentCursorPosition = currentTextEdittingValue.selection.baseOffset;
+    TextEditingValue newTextEdittingValue;
+    if (currentTextEdittingValue.selection.isCollapsed) {
+      newTextEdittingValue = currentTextEdittingValue.replaced(
+        TextRange(
+          start: currentCursorPosition,
+          end: currentCursorPosition + clibBoardData.text!.length,
+        ),
+        clibBoardData.text!,
+      );
+      newTextEdittingValue = newTextEdittingValue.copyWith(
+        selection: TextSelection.collapsed(
+          offset: currentCursorPosition + clibBoardData.text!.length,
+        ),
+      );
+    } else {
+      newTextEdittingValue = currentTextEdittingValue.replaced(
+        TextRange(
+          start: currentTextEdittingValue.selection.start,
+          end: currentTextEdittingValue.selection.end,
+        ),
+        clibBoardData.text!,
+      );
+      newTextEdittingValue = newTextEdittingValue.copyWith(
+        selection: TextSelection.collapsed(
+          offset:
+              currentTextEdittingValue.selection.start +
+              clibBoardData.text!.length,
+        ),
+      );
+    }
+    _value = newTextEdittingValue;
+    widget.onChanged?.call(newTextEdittingValue.text);
+    _hideToolbar();
+  }
+
+  @override
+  void selectAll(SelectionChangedCause cause) {
+    _handleSelectionChanged(
+      TextSelection(baseOffset: 0, extentOffset: _value.text.length),
+      cause,
+    );
+  }
+
+  @override
+  TextEditingValue get textEditingValue => _value;
 }
 
 class _TextFieldPainter extends CustomPainter {
@@ -486,6 +605,8 @@ class _TextFieldPainter extends CustomPainter {
   final int cursorPosition;
   final double cursorOpacity;
   final bool obscureText;
+  final Color cursorColor;
+  final double cursorWidth;
 
   static const double PADDING_LEFT = 8;
   static const double PADDING_TOP = 12;
@@ -497,6 +618,8 @@ class _TextFieldPainter extends CustomPainter {
     required this.selectionEnd,
     required this.cursorPosition,
     required this.obscureText,
+    required this.cursorColor,
+    required this.cursorWidth,
     this.cursorOpacity = 1.0,
   });
 
@@ -587,8 +710,8 @@ class _TextFieldPainter extends CustomPainter {
       Rect.fromLTWH(0, 0, size.width - 20, size.height),
     );
     final cursorPaint = Paint()
-      ..color = Colors.blue.withOpacity(cursorOpacity)
-      ..strokeWidth = 2.0;
+      ..color = cursorColor.withOpacity(cursorOpacity)
+      ..strokeWidth = cursorWidth;
     final cursorX = PADDING_LEFT + cursorOffset.dx;
     final cursorStartY = PADDING_TOP + cursorOffset.dy;
     final cursorEndY = PADDING_TOP + cursorOffset.dy + selectionHeight;
@@ -624,6 +747,191 @@ class _TextFieldPainter extends CustomPainter {
         oldDelegate.selectionStart != selectionStart ||
         oldDelegate.selectionEnd != selectionEnd ||
         oldDelegate.cursorPosition != cursorPosition ||
+        oldDelegate.cursorColor != cursorColor ||
+        oldDelegate.cursorWidth != cursorWidth ||
+        oldDelegate.obscureText != obscureText ||
         oldDelegate.cursorOpacity != cursorOpacity;
+  }
+}
+
+// ------------------- Selection Overlay -------------------
+
+class _SelectionOverlayControls {
+  Widget buildToolbar(
+    BuildContext context,
+    Offset position,
+    List<TextSelectionPoint> endpoints,
+    TextSelectionDelegate delegate,
+  ) {
+    return _SelectionToolBar(
+      position: _toolBarPositionOffset(endpoints),
+      endpoints: endpoints,
+      delegate: delegate,
+    );
+  }
+
+  Offset _toolBarPositionOffset(List<TextSelectionPoint> textSelectionPoints) {
+    if (textSelectionPoints.isEmpty) return Offset.zero;
+    final _firstOffest = textSelectionPoints.first;
+    return Offset(_firstOffest.point.dx, _firstOffest.point.dy - 50);
+  }
+}
+
+class _SelectionToolBar extends StatelessWidget {
+  final List<TextSelectionPoint> endpoints;
+  final TextSelectionDelegate delegate;
+  final Offset position;
+  const _SelectionToolBar({
+    super.key,
+    required this.endpoints,
+    required this.delegate,
+    required this.position,
+  });
+
+  void _handleCopy() {
+    delegate.copySelection(SelectionChangedCause.toolbar);
+  }
+
+  void _handleCut() {
+    delegate.cutSelection(SelectionChangedCause.toolbar);
+  }
+
+  void _handlePaste() {
+    delegate.pasteText(SelectionChangedCause.toolbar);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: position.dy,
+          left: position.dx,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _ToolBarButton(label: 'Copy', onPressed: _handleCopy),
+                const _Devider(),
+                _ToolBarButton(label: 'Cut', onPressed: _handleCut),
+                const _Devider(),
+                _ToolBarButton(label: 'Paste', onPressed: _handlePaste),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Devider extends StatelessWidget {
+  const _Devider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 20,
+      color: Colors.grey,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+    );
+  }
+}
+
+class _ToolBarButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  const _ToolBarButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Text(label, style: TextStyle(color: Colors.black)),
+        ),
+      ),
+    );
+  }
+}
+
+class SelectionHandler extends StatefulWidget {
+  final SelectionHandleType type;
+  final Offset position; // Position of the handler
+  final GestureDragStartCallback onPanStart;
+  final GestureDragEndCallback onPanEnd;
+  final ValueChanged<Offset> onPanUpdate;
+  const SelectionHandler({
+    super.key,
+    required this.type,
+    required this.onPanEnd,
+    required this.onPanStart,
+    required this.onPanUpdate,
+    required this.position,
+  });
+
+  @override
+  State<SelectionHandler> createState() => _SelectionHandlerState();
+}
+
+class _SelectionHandlerState extends State<SelectionHandler> {
+  late Offset _draggPosition;
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanStart: (currentPosition) {
+        _draggPosition = currentPosition.globalPosition;
+        widget.onPanStart.call(currentPosition);
+      },
+      onPanEnd: (d) => widget.onPanEnd.call(d),
+      onPanUpdate: (currentPosition) {
+        final delta = currentPosition.globalPosition - _draggPosition;
+        _draggPosition = currentPosition.globalPosition;
+        widget.onPanUpdate.call(delta);
+      },
+      child: Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: Colors.blue,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2), // Shadow
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
