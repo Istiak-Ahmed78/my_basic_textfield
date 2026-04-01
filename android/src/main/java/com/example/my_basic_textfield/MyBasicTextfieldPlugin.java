@@ -135,17 +135,44 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
       return;
     }
 
-    View rootView = activity.getWindow().getDecorView().getRootView();
+    android.util.Log.d(TAG, "🔧 Initializing TextInputPlugin...");
 
-    // ✅ FIXED: Pass null for channels - they'll be initialized by Flutter
+    View rootView = activity.getWindow().getDecorView().getRootView();
+    android.util.Log.d(TAG, "✅ Root view obtained: " + rootView.getClass().getSimpleName());
+
+    // ✅ FIXED: Access channels via reflection or use the engine's dart executor
+    // Try to get TextInputChannel from the engine
     TextInputChannel textInputChannel = null;
     ScribeChannel scribeChannel = null;
 
+    try {
+      // Method 1: Try using getDartExecutor() to get the channels
+      // This is the more reliable way in newer Flutter versions
+      Object dartExecutor = flutterEngine.getDartExecutor();
+      android.util.Log.d(TAG, "✅ DartExecutor obtained: " + dartExecutor.getClass().getSimpleName());
+
+      // Create new channels if they don't exist
+      textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
+      scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
+
+      android.util.Log.d(TAG, "✅ Channels created successfully");
+    } catch (Exception e) {
+      android.util.Log.e(TAG, "❌ Error creating channels: " + e.getMessage());
+      e.printStackTrace();
+
+      // Fallback: Create with null - Flutter will initialize them
+      android.util.Log.d(TAG, "⚠️ Using fallback: channels will be initialized by Flutter");
+    }
+
     PlatformViewsController platformViewsController =
         flutterEngine.getPlatformViewsController();
+    android.util.Log.d(TAG, "✅ PlatformViewsController obtained");
+
     PlatformViewsController2 platformViewsController2 =
         flutterEngine.getPlatformViewsController2();
+    android.util.Log.d(TAG, "✅ PlatformViewsController2 obtained");
 
+    // Create the TextInputPlugin
     textInputPlugin =
         new TextInputPlugin(
             rootView,
@@ -154,7 +181,7 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
             platformViewsController,
             platformViewsController2);
 
-    android.util.Log.d(TAG, "TextInputPlugin created and initialized");
+    android.util.Log.d(TAG, "✅ TextInputPlugin created and initialized successfully!");
   }
 
   private void cleanupTextInputPlugin() {

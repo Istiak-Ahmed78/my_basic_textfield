@@ -23,6 +23,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.plugin.platform.PlatformViewsController2;
 import com.example.my_basic_textfield.editing.models.InputTarget;
+import com.example.my_basic_textfield.editing.models.InputConfiguration;
 
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
   private static final String TAG = "TextInputPlugin";
@@ -43,7 +44,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
 
   @Nullable
-  private TextInputChannel.Configuration configuration;
+  private InputConfiguration configuration;  // ✅ FIXED: Use custom InputConfiguration
 
   @NonNull
   private ListenableEditingState mEditable;
@@ -86,11 +87,13 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
+            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.show() called");
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
+            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.hide() called");
             hideTextInput(mView);
           }
 
@@ -104,8 +107,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void setClient(
-              int textInputClientId, TextInputChannel.Configuration configuration) {
-            setTextInputClient(textInputClientId, configuration);
+              int textInputClientId, TextInputChannel.Configuration flutterConfig) {
+            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.setClient() called with clientId=" + textInputClientId);
+            
+            // ✅ CONVERT Flutter's Configuration to our InputConfiguration
+            InputConfiguration config = convertFlutterConfiguration(flutterConfig);
+            setTextInputClient(textInputClientId, config);
           }
 
           @Override
@@ -115,6 +122,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void setEditingState(TextInputChannel.TextEditState editingState) {
+            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.setEditingState() called");
             setTextInputEditingState(mView, editingState);
           }
 
@@ -125,6 +133,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void clearClient() {
+            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.clearClient() called");
             clearTextInputClient();
           }
 
@@ -142,6 +151,52 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     this.platformViewsController2 = platformViewsController2;
 
     android.util.Log.d(TAG, "TextInputPlugin created");
+  }
+
+  // ✅ NEW METHOD: Convert Flutter's Configuration to our InputConfiguration
+  @NonNull
+  private InputConfiguration convertFlutterConfiguration(
+      @NonNull TextInputChannel.Configuration flutterConfig) {
+    
+    android.util.Log.d(TAG, "convertFlutterConfiguration: " + flutterConfig);
+
+    InputConfiguration.InputType inputType = InputConfiguration.InputType.TEXT;
+    
+    if (flutterConfig.inputType != null) {
+      String type = flutterConfig.inputType.type.name().toLowerCase();
+      android.util.Log.d(TAG, "convertFlutterConfiguration: Flutter inputType=" + type);
+      
+      try {
+        inputType = InputConfiguration.InputType.valueOf(type.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        android.util.Log.w(TAG, "Unknown input type: " + type + ", using TEXT");
+        inputType = InputConfiguration.InputType.TEXT;
+      }
+    }
+
+    InputConfiguration.TextCapitalization textCap = InputConfiguration.TextCapitalization.NONE;
+    if (flutterConfig.textCapitalization != null) {
+      try {
+        textCap = InputConfiguration.TextCapitalization.valueOf(
+            flutterConfig.textCapitalization.name().toUpperCase());
+      } catch (IllegalArgumentException e) {
+        android.util.Log.w(TAG, "Unknown text capitalization");
+      }
+    }
+
+    InputConfiguration config = new InputConfiguration(
+        inputType,
+        flutterConfig.inputAction,
+        flutterConfig.obscureText,
+        flutterConfig.autocorrect,
+        flutterConfig.enableSuggestions,
+        flutterConfig.enableIMEPersonalizedLearning,
+        textCap,
+        flutterConfig.actionLabel
+    );
+
+    android.util.Log.d(TAG, "convertFlutterConfiguration result: " + config);
+    return config;
   }
 
   @NonNull
@@ -204,15 +259,15 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     
     if (type.equals("multiline")) {
       textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
-    } else if (type.equals("emailAddress")) {
+    } else if (type.equals("email_address")) {
       textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
     } else if (type.equals("url")) {
       textType |= InputType.TYPE_TEXT_VARIATION_URI;
-    } else if (type.equals("visiblePassword")) {
+    } else if (type.equals("visible_password")) {
       textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
     } else if (type.equals("name")) {
       textType |= InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
-    } else if (type.equals("address")) {
+    } else if (type.equals("postal_address")) {
       textType |= InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS;
     }
 
@@ -273,20 +328,21 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return null;
     }
 
-String inputType = configuration.inputType.type.name().toLowerCase();
-    if (inputType == null) {
-      android.util.Log.e(TAG, "createInputConnection: configuration.inputType is null!");
-      return null;
-    }
+    // ✅ FIXED: Use configuration.inputType.name() directly
+    String inputType = configuration.inputType != null 
+        ? configuration.inputType.name().toLowerCase() 
+        : "text";
+    
+    android.util.Log.d(TAG, "createInputConnection: inputType=" + inputType);
 
     outAttrs.inputType =
-    inputTypeFromTextInputType(
-        inputType,
-        configuration.obscureText,
-        configuration.autocorrect,
-        configuration.enableSuggestions,
-        configuration.enableIMEPersonalizedLearning,
-        configuration.textCapitalization.name().toLowerCase());
+        inputTypeFromTextInputType(
+            inputType,
+            configuration.obscureText,
+            configuration.autocorrect,
+            configuration.enableSuggestions,
+            configuration.enableIMEPersonalizedLearning,
+            configuration.textCapitalization.name().toLowerCase());
     
     outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
 
@@ -352,16 +408,24 @@ String inputType = configuration.inputType.type.name().toLowerCase();
 
   @VisibleForTesting
   void showTextInput(View view) {
-    android.util.Log.d(TAG, "showTextInput");
+    android.util.Log.d(TAG, "showTextInput called");
 
-   if (configuration == null
-    || configuration.inputType == null
-    || "none".equals(configuration.inputType.type)) {
-      view.requestFocus();
-      mImm.showSoftInput(view, 0);
-    } else {
-      hideTextInput(view);
+    // ✅ FIXED: Correct logic - Show keyboard for valid input types
+    if (configuration == null
+        || configuration.inputType == null) {
+      android.util.Log.w(TAG, "showTextInput: configuration is null, cannot show keyboard");
+      return;
     }
+
+    // Don't show keyboard for "none" type
+    if (configuration.inputType == InputConfiguration.InputType.NONE) {
+      android.util.Log.d(TAG, "showTextInput: input type is NONE, skipping");
+      return;
+    }
+
+    android.util.Log.d(TAG, "showTextInput: requesting focus and showing keyboard");
+    view.requestFocus();
+    mImm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
   }
 
   private void hideTextInput(View view) {
@@ -370,11 +434,10 @@ String inputType = configuration.inputType.type.name().toLowerCase();
   }
 
   @VisibleForTesting
-  void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
+  void setTextInputClient(int client, InputConfiguration configuration) {
     android.util.Log.d(TAG, "setTextInputClient: client=" + client + 
         ", config=" + configuration);
 
-    // ✅ FIXED: Now using TextInputChannel.Configuration
     this.configuration = configuration;
     
     inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
@@ -391,7 +454,12 @@ String inputType = configuration.inputType.type.name().toLowerCase();
     
     mEditable.addEditingStateListener(this);
 
-    android.util.Log.d(TAG, "setTextInputClient: client set, input restart pending");
+    // ✅ FIXED: Immediately restart input to initialize keyboard
+    android.util.Log.d(TAG, "setTextInputClient: calling restartInput immediately");
+    mImm.restartInput(mView);
+    mRestartInputPending = false;
+
+    android.util.Log.d(TAG, "setTextInputClient: client set and input restarted");
   }
 
   private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
