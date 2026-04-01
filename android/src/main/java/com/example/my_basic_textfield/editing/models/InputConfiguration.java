@@ -1,107 +1,63 @@
 package com.example.my_basic_textfield.editing.models;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
-/**
- * Configuration for text input from Flutter.
- * 
- * This class holds all the configuration parameters that Flutter sends
- * to the native side to configure how the keyboard should behave.
- * 
- * Examples:
- * - Input type (text, number, email, etc.)
- * - Input action (done, send, next, etc.)
- * - Whether text should be obscured (password field)
- * - Autocorrect settings
- * - Text capitalization
- */
 public class InputConfiguration {
-  /**
-   * The type of input (text, number, email, phone, etc.)
-   * 
-   * Example: TextInputType.text, TextInputType.number
-   */
-  @Nullable
-  public TextInputChannel.InputType inputType;
+  // Define our own InputType enum (decoupled from Flutter)
+  public enum InputType {
+    TEXT,
+    MULTILINE,
+    NUMBER,
+    EMAIL_ADDRESS,
+    PHONE,
+    URL,
+    DATETIME,
+    VISIBLE_PASSWORD,
+    NAME,
+    POSTAL_ADDRESS,
+    TWITTER,
+    WEB_SEARCH,
+    NONE
+  }
 
-  /**
-   * The action to perform when user presses the action button on keyboard
-   * 
-   * Example: EditorInfo.IME_ACTION_DONE, EditorInfo.IME_ACTION_SEND
-   */
+  // Define our own TextCapitalization enum
+  public enum TextCapitalization {
+    NONE,
+    CHARACTERS,
+    WORDS,
+    SENTENCES
+  }
+
+  @Nullable
+  public InputType inputType;
+
   @Nullable
   public Integer inputAction;
 
-  /**
-   * Whether the text should be obscured (for passwords)
-   * 
-   * When true, the keyboard will hide the typed characters.
-   * Default: false
-   */
   public boolean obscureText;
 
-  /**
-   * Whether autocorrect should be enabled
-   * 
-   * When true, the keyboard will suggest corrections.
-   * Default: true
-   */
   public boolean autocorrect;
 
-  /**
-   * Whether suggestions should be enabled
-   * 
-   * When true, the keyboard will show word suggestions.
-   * Default: true
-   */
   public boolean enableSuggestions;
 
-  /**
-   * Whether IME personalized learning should be enabled
-   * 
-   * When true, the keyboard can learn from user input.
-   * Default: true
-   */
   public boolean enableIMEPersonalizedLearning;
 
-  /**
-   * Text capitalization mode
-   * 
-   * Example: TextCapitalization.none, TextCapitalization.sentences
-   */
   @Nullable
-  public TextInputChannel.TextCapitalization textCapitalization;
+  public TextCapitalization textCapitalization;
 
-  /**
-   * Custom label for the action button
-   * 
-   * If set, this replaces the default action button label.
-   * Example: "Send", "Search", "Go"
-   */
   @Nullable
   public String actionLabel;
 
-  /**
-   * Creates a new InputConfiguration with all parameters
-   *
-   * @param inputType                         The type of input
-   * @param inputAction                       The action button behavior
-   * @param obscureText                       Whether to hide typed text
-   * @param autocorrect                       Whether to enable autocorrect
-   * @param enableSuggestions                 Whether to show suggestions
-   * @param enableIMEPersonalizedLearning     Whether IME can learn
-   * @param textCapitalization                How to capitalize text
-   * @param actionLabel                       Custom action button label
-   */
+  // Full constructor
   public InputConfiguration(
-      @Nullable TextInputChannel.InputType inputType,
+      @Nullable InputType inputType,
       @Nullable Integer inputAction,
       boolean obscureText,
       boolean autocorrect,
       boolean enableSuggestions,
       boolean enableIMEPersonalizedLearning,
-      @Nullable TextInputChannel.TextCapitalization textCapitalization,
+      @Nullable TextCapitalization textCapitalization,
       @Nullable String actionLabel) {
     this.inputType = inputType;
     this.inputAction = inputAction;
@@ -113,12 +69,8 @@ public class InputConfiguration {
     this.actionLabel = actionLabel;
   }
 
-  /**
-   * Creates a basic InputConfiguration with default values
-   *
-   * @param inputType The type of input
-   */
-  public InputConfiguration(@Nullable TextInputChannel.InputType inputType) {
+  // Convenience constructor with just input type
+  public InputConfiguration(@Nullable InputType inputType) {
     this(
         inputType,
         null,
@@ -126,37 +78,38 @@ public class InputConfiguration {
         true,
         true,
         true,
-        TextInputChannel.TextCapitalization.NONE,
+        TextCapitalization.NONE,
         null);
   }
 
-  /**
-   * Checks if this is a password field
-   *
-   * @return true if obscureText is true
-   */
+  // Default constructor
+  public InputConfiguration() {
+    this(InputType.TEXT);
+  }
+
+  // Helper methods
   public boolean isPasswordField() {
     return obscureText;
   }
 
-  /**
-   * Checks if this is a multiline input
-   *
-   * @return true if inputType is multiline
-   */
   public boolean isMultiline() {
-    return inputType != null
-        && inputType.type == TextInputChannel.TextInputType.MULTILINE;
+    return inputType == InputType.MULTILINE;
   }
 
-  /**
-   * Checks if this is a number input
-   *
-   * @return true if inputType is number
-   */
   public boolean isNumberInput() {
-    return inputType != null
-        && inputType.type == TextInputChannel.TextInputType.NUMBER;
+    return inputType == InputType.NUMBER;
+  }
+
+  public boolean isEmailInput() {
+    return inputType == InputType.EMAIL_ADDRESS;
+  }
+
+  public boolean isPhoneInput() {
+    return inputType == InputType.PHONE;
+  }
+
+  public boolean isUrlInput() {
+    return inputType == InputType.URL;
   }
 
   @NonNull
