@@ -46,20 +46,30 @@ public class ListenableEditingState extends SpannableStringBuilder implements Te
   // ✅ CRITICAL OVERRIDE: Intercept text changes to notify listeners
   @Override
   public SpannableStringBuilder replace(int start, int end, CharSequence tb, int tbstart, int tbend) {
-    android.util.Log.d(TAG, "replace() called: start=" + start + ", end=" + end + 
-        ", newText='" + tb.subSequence(tbstart, tbend) + "'");
+    String newText = tb.subSequence(tbstart, tbend).toString();
+    android.util.Log.d(TAG, "╔═════════════════════════════════════════════════════════════╗");
+    android.util.Log.d(TAG, "│ 📝 replace() OVERRIDE called                              │");
+    android.util.Log.d(TAG, "├─ start=" + start + ", end=" + end);
+    android.util.Log.d(TAG, "├─ currentText='" + super.toString() + "'");
+    android.util.Log.d(TAG, "├─ newText='" + newText + "'");
     
     // Call beforeTextChanged
+    android.util.Log.d(TAG, "├─ Calling beforeTextChanged...");
     beforeTextChanged(this, start, end - start, tbend - tbstart);
     
     // Do the actual replacement
+    android.util.Log.d(TAG, "├─ Calling super.replace()...");
     SpannableStringBuilder result = super.replace(start, end, tb, tbstart, tbend);
+    android.util.Log.d(TAG, "├─ After replace, text='" + super.toString() + "'");
     
     // Call onTextChanged  
+    android.util.Log.d(TAG, "├─ Calling onTextChanged...");
     onTextChanged(this, start, end - start, tbend - tbstart);
     
     // Call afterTextChanged
+    android.util.Log.d(TAG, "├─ Calling afterTextChanged...");
     afterTextChanged(this);
+    android.util.Log.d(TAG, "╚═════════════════════════════════════════════════════════════╝");
     
     return result;
   }
@@ -166,12 +176,27 @@ public class ListenableEditingState extends SpannableStringBuilder implements Te
   }
 
   private void notifyListeners(boolean textChanged, boolean selectionChanged, boolean composingChanged) {
+    android.util.Log.d(TAG, "notifyListeners: textChanged=" + textChanged + 
+        ", selectionChanged=" + selectionChanged + 
+        ", composingChanged=" + composingChanged +
+        ", mIsInBatchEdit=" + mIsInBatchEdit +
+        ", watchers.size=" + mWatchers.size());
+    
     if (mIsInBatchEdit) {
+      android.util.Log.d(TAG, "notifyListeners: SKIPPED because batch edit in progress");
       return;
     }
 
+    if (mWatchers.isEmpty()) {
+      android.util.Log.w(TAG, "notifyListeners: WARNING - No listeners registered!");
+      return;
+    }
+
+    android.util.Log.d(TAG, "notifyListeners: Calling didChangeEditingState on " + mWatchers.size() + " watchers");
     for (EditingStateWatcher watcher : mWatchers) {
+      android.util.Log.d(TAG, "notifyListeners: Calling watcher=" + watcher.getClass().getSimpleName());
       watcher.didChangeEditingState(textChanged, selectionChanged, composingChanged);
+      android.util.Log.d(TAG, "notifyListeners: Watcher callback completed");
     }
   }
 
@@ -202,10 +227,19 @@ public class ListenableEditingState extends SpannableStringBuilder implements Te
 
   @Override
   public void afterTextChanged(Editable s) {
+    android.util.Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗");
+    android.util.Log.d(TAG, "│ afterTextChanged called                                 │");
+    android.util.Log.d(TAG, "├─ text='" + s.toString() + "'");
+    android.util.Log.d(TAG, "├─ mIsInBatchEdit=" + mIsInBatchEdit);
+    
     if (!mIsInBatchEdit) {
-      android.util.Log.d(TAG, "afterTextChanged: text='" + s.toString() + "'");
+      android.util.Log.d(TAG, "├─ Not in batch edit, calling notifyListeners...");
       notifyListeners(true, false, false);
+      android.util.Log.d(TAG, "├─ notifyListeners completed");
+    } else {
+      android.util.Log.d(TAG, "├─ SKIPPED because in batch edit");
     }
+    android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
   }
 
   public void beginBatchEdit() {
