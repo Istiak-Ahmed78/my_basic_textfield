@@ -579,7 +579,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     
     mEditable.removeEditingStateListener(this);
     
-    configuration = null;
+    // FIX: Don't clear configuration - keep it for reuse on second tap
+    // When keyboard is hidden and user taps field again, show() is called without setClient()
+    // If configuration is null, showTextInput() returns early and keyboard won't appear
+    // configuration = null;
     
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     
