@@ -32,27 +32,16 @@ class TextEdittingController extends ValueNotifier<TextEditingValue> {
   TextEditingValue get editingValue => value;
   String get text => value.text;
   set text(String valueText) {
-    debugPrint('🎮 TextEdittingController.text setter called');
-    debugPrint('   - Old text: "${value.text}"');
-    debugPrint('   - New text: "$valueText"');
     value = value.copyWith(text: valueText);
-    debugPrint('   - Value updated');
   }
 
   TextSelection get selection => value.selection;
   set selection(TextSelection selection) {
-    debugPrint('🎮 TextEdittingController.selection setter called');
-    debugPrint('   - Old selection: ${value.selection}');
-    debugPrint('   - New selection: $selection');
     value = value.copyWith(selection: selection);
-    debugPrint('   - Selection updated');
   }
 
   void clear() {
-    debugPrint('🧹 TextEdittingController.clear() called');
-    debugPrint('   - Old text: "${value.text}"');
     value = TextEditingValue.empty;
-    debugPrint('   - Text cleared');
   }
 }
 
@@ -114,11 +103,7 @@ class _EditableTextState extends State<EditableText>
   TextEditingValue get _value => _controller.value;
 
   set _value(TextEditingValue newValue) {
-    debugPrint('🎯 _value setter called');
-    debugPrint('   - Old value: ${_controller.value}');
-    debugPrint('   - New value: $newValue');
     _controller.value = newValue;
-    debugPrint('   - Value set in controller');
   }
 
   bool get _hasFocus => _focusNode.hasFocus;
@@ -130,40 +115,30 @@ class _EditableTextState extends State<EditableText>
 
   @override
   TextEditingValue get currentTextEditingValue {
-    debugPrint('📖 currentTextEditingValue getter called');
-    debugPrint('   - Returning: $_value');
     return _value;
   }
 
   @override
   void initState() {
-    debugPrint('\n🎯 ========== EditableText.initState() ==========');
     super.initState();
 
     _controller = widget.controller ?? TextEdittingController(null);
-    debugPrint('✅ Controller initialized: $_controller');
 
     _focusNode = widget.focusNode ?? FocusNode();
-    debugPrint('✅ FocusNode initialized: $_focusNode');
 
     _controller.addListener(_didChangeTextEditingValue);
-    debugPrint('✅ Text listener attached');
 
     _focusNode.addListener(_handleFocusChanged);
-    debugPrint('✅ Focus listener attached');
 
     _cursorBlinkOpacityController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _cursorBlinkOpacityController.addListener(_onCursorColorTick);
-    debugPrint('✅ Cursor blink animation controller initialized');
-    debugPrint('🎯 ========== EditableText.initState() END ==========\n');
   }
 
   @override
   void dispose() {
-    debugPrint('\n🗑️ ========== EditableText.dispose() ==========');
     _controller.removeListener(_didChangeTextEditingValue);
     _focusNode.removeListener(_handleFocusChanged);
     _closeInputConnectionIfNeeded();
@@ -171,51 +146,25 @@ class _EditableTextState extends State<EditableText>
     _cursorTimer?.cancel();
     _cursorBlinkOpacityController.removeListener(_onCursorColorTick);
     _cursorBlinkOpacityController.dispose();
-    debugPrint('✅ All listeners and connections cleaned up');
-    debugPrint('🗑️ ========== EditableText.dispose() END ==========\n');
     super.dispose();
   }
 
   void _didChangeTextEditingValue() {
-    debugPrint('\n📝 ========== _didChangeTextEditingValue() ==========');
-    debugPrint('📄 Current text: "${_controller.text}"');
-    debugPrint('📏 Text length: ${_controller.text.length}');
-    debugPrint('🎯 Selection: ${_controller.selection}');
-
     _updateRemoteEditingValueIfNeeded();
-    debugPrint('✅ Remote editing value updated');
 
     setState(() {
-      debugPrint('🎨 setState() called');
+      // Rebuild UI with new text
     });
-    debugPrint('📝 ========== _didChangeTextEditingValue() END ==========\n');
   }
 
   void _handleFocusChanged() {
-    debugPrint('\n📍 ========== _handleFocusChanged() ==========');
-    debugPrint('🎯 Has focus: $_hasFocus');
-    debugPrint('📊 Focus node details:');
-    debugPrint('   - _focusNode: $_focusNode');
-    debugPrint('   - _focusNode.hasFocus: ${_focusNode.hasFocus}');
-    debugPrint(
-      '   - _shouldCreateInputConnection: $_shouldCreateInputConnection',
-    );
-    debugPrint('   - _hasInputConnection: $_hasInputConnection');
-
     if (_hasFocus) {
-      debugPrint('✅ Focus gained - Opening input connection');
       _openInputConnection();
-      debugPrint('   - _hasInputConnection after open: $_hasInputConnection');
       _startCursorBlink();
-      debugPrint('✅ Cursor blink started');
     } else {
-      debugPrint('❌ Focus lost - Closing input connection');
       _closeInputConnectionIfNeeded();
-      debugPrint('   - _hasInputConnection after close: $_hasInputConnection');
       _stopCursorBlink();
-      debugPrint('✅ Cursor blink stopped');
     }
-    debugPrint('📍 ========== _handleFocusChanged() END ==========\n');
   }
 
   void _onCursorColorTick() {
@@ -225,11 +174,8 @@ class _EditableTextState extends State<EditableText>
   }
 
   TextInputConfiguration _getTextInputConfiguration() {
-    debugPrint('\n⚙️ ========== _getTextInputConfiguration() ==========');
-
     try {
       final viewId = View.of(context).viewId;
-      debugPrint('📊 View ID obtained: $viewId');
 
       final config = TextInputConfiguration(
         viewID: viewId,
@@ -243,140 +189,53 @@ class _EditableTextState extends State<EditableText>
         enableInteractiveSelection: true,
       );
 
-      debugPrint('✅ Configuration created:');
-      debugPrint('   - viewID: ${config.viewID}');
-      debugPrint('   - inputType: ${config.inputType}');
-      debugPrint('   - inputAction: ${config.inputAction}');
-      debugPrint('   - readOnly: ${config.readOnly}');
-      debugPrint('   - obscureText: ${config.obscureText}');
-      debugPrint('⚙️ ========== _getTextInputConfiguration() END ==========\n');
-
       return config;
     } catch (e) {
-      debugPrint('❌ ERROR in _getTextInputConfiguration(): $e');
-      debugPrint('   - Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }
 
   void _openInputConnection() {
-    debugPrint('\n🔌 ========== _openInputConnection() ==========');
-    debugPrint('📊 Status check:');
-    debugPrint(
-      '   - _shouldCreateInputConnection: $_shouldCreateInputConnection',
-    );
-    debugPrint('   - _hasInputConnection: $_hasInputConnection');
-    debugPrint('   - _textInputConnection: $_textInputConnection');
-    debugPrint('   - widget.readOnly: ${widget.readOnly}');
-
     if (!_shouldCreateInputConnection) {
-      debugPrint(
-        '❌ Should not create input connection (readOnly or other reason)',
-      );
-      debugPrint('🔌 ========== _openInputConnection() END ==========\n');
       return;
     }
 
     if (!_hasInputConnection) {
-      debugPrint('📞 Creating new input connection...');
       final TextInputConfiguration config = _getTextInputConfiguration();
 
-      debugPrint('📞 Calling TextInput.attach()...');
-      debugPrint('   - this: $this');
-      debugPrint('   - config: $config');
       _textInputConnection = TextInput.attach(this, config);
-      debugPrint('✅ TextInput.attach() completed');
-      debugPrint('   - Connection: $_textInputConnection');
-      debugPrint('   - Connection ID: ${_textInputConnection?.id}');
-      debugPrint('   - Connection.attached: ${_textInputConnection?.attached}');
 
       if (_textInputConnection != null) {
-        debugPrint('📞 Calling _textInputConnection.show()...');
         _textInputConnection!.show();
-        debugPrint('✅ Keyboard shown');
-      } else {
-        debugPrint('❌ ERROR: _textInputConnection is null after attach()!');
       }
 
       _lastKnownRemoteTextEditingValue = _value;
-      debugPrint(
-        '✅ Last known remote value updated: $_lastKnownRemoteTextEditingValue',
-      );
-    } else {
-      debugPrint('⚠️ Input connection already exists');
     }
-    debugPrint('🔌 ========== _openInputConnection() END ==========\n');
   }
 
   void _closeInputConnectionIfNeeded() {
-    debugPrint('\n🔌 ========== _closeInputConnectionIfNeeded() ==========');
-    debugPrint('📊 Status check:');
-    debugPrint('   - _hasInputConnection: $_hasInputConnection');
-    debugPrint('   - _textInputConnection: $_textInputConnection');
-
     if (_hasInputConnection) {
-      debugPrint('📞 Closing input connection...');
-      debugPrint('   - Connection ID: ${_textInputConnection?.id}');
-      debugPrint('   - Connection.attached: ${_textInputConnection?.attached}');
       _textInputConnection?.close();
-      debugPrint('✅ Input connection closed');
       _textInputConnection = null;
       _lastKnownRemoteTextEditingValue = TextEditingValue.empty;
-      debugPrint('   - _textInputConnection set to null');
-    } else {
-      debugPrint('⚠️ No input connection to close');
     }
-    debugPrint(
-      '🔌 ========== _closeInputConnectionIfNeeded() END ==========\n',
-    );
   }
 
   void _updateRemoteEditingValueIfNeeded() {
-    debugPrint(
-      '\n🔄 ========== _updateRemoteEditingValueIfNeeded() ==========',
-    );
-    debugPrint('📊 Status: _hasInputConnection = $_hasInputConnection');
-
     if (!_hasInputConnection) {
-      debugPrint('⚠️ No input connection - skipping update');
-      debugPrint(
-        '🔄 ========== _updateRemoteEditingValueIfNeeded() END ==========\n',
-      );
       return;
     }
-
-    debugPrint('📊 Comparing values:');
-    debugPrint('   - Current: $_value');
-    debugPrint('   - Last known: $_lastKnownRemoteTextEditingValue');
 
     if (_value == _lastKnownRemoteTextEditingValue) {
-      debugPrint('✅ Values are equal - no update needed');
-      debugPrint(
-        '🔄 ========== _updateRemoteEditingValueIfNeeded() END ==========\n',
-      );
       return;
     }
 
-    debugPrint('📞 Calling setEditingState()...');
     _textInputConnection!.setEditingState(_value);
-    debugPrint('✅ setEditingState() completed');
-
     _lastKnownRemoteTextEditingValue = _value;
-    debugPrint('✅ Last known remote value updated');
-    debugPrint(
-      '🔄 ========== _updateRemoteEditingValueIfNeeded() END ==========\n',
-    );
   }
 
   void _startCursorBlink() {
-    debugPrint('\n⏱️ ========== _startCursorBlink() ==========');
-    debugPrint('📊 Conditions:');
-    debugPrint('   - widget.showCursor: ${widget.showCursor}');
-    debugPrint('   - _showBlinkingCursor: $_showBlinkingCursor');
-
     if (!widget.showCursor || !_showBlinkingCursor) {
-      debugPrint('⚠️ Cursor should not blink');
-      debugPrint('⏱️ ========== _startCursorBlink() END ==========\n');
       return;
     }
 
@@ -387,31 +246,20 @@ class _EditableTextState extends State<EditableText>
       _cursorBlinkOpacityController.value =
           _cursorBlinkOpacityController.value == 0 ? 1 : 0;
     });
-    debugPrint('✅ Cursor blink timer started');
-    debugPrint('⏱️ ========== _startCursorBlink() END ==========\n');
   }
 
   void _stopCursorBlink({bool resetCharTicks = true}) {
-    debugPrint('\n⏱️ ========== _stopCursorBlink() ==========');
     _cursorBlinkOpacityController.value = 0.0;
     _cursorTimer?.cancel();
     _cursorTimer = null;
-    debugPrint('✅ Cursor blink stopped');
-    debugPrint('⏱️ ========== _stopCursorBlink() END ==========\n');
   }
 
   void _hideToolbar() {
-    debugPrint('\n🔧 ========== _hideToolbar() ==========');
     _selectionOverlay?.hide();
     _selectionOverlay = null;
-    debugPrint('✅ Toolbar hidden');
-    debugPrint('🔧 ========== _hideToolbar() END ==========\n');
   }
 
   TextSelectionOverlay _createSelectionOverlay() {
-    debugPrint('\n🎨 ========== _createSelectionOverlay() ==========');
-    debugPrint('✅ Creating selection overlay');
-
     return TextSelectionOverlay(
       value: _value,
       context: context,
@@ -423,7 +271,6 @@ class _EditableTextState extends State<EditableText>
       selectionControls: _SelectionOverlayControls(),
       selectionDelegate: this,
       onSelectionHandleUpdate: (newPosition) {
-        debugPrint('🎯 Selection handle updated: $newPosition');
         _handleSelectionChanged(newPosition, SelectionChangedCause.drag);
       },
     );
@@ -433,27 +280,19 @@ class _EditableTextState extends State<EditableText>
     TextSelection selection,
     SelectionChangedCause? cause,
   ) {
-    debugPrint('\n🎯 ========== _handleSelectionChanged() ==========');
-    debugPrint('📊 New selection: $selection');
-    debugPrint('📊 Cause: $cause');
-
     final String text = _controller.text;
 
     if (text.length < selection.start || text.length < selection.end) {
-      debugPrint('❌ Selection out of bounds - ignoring');
-      debugPrint('🎯 ========== _handleSelectionChanged() END ==========\n');
       return;
     }
 
     _controller.selection = selection;
-    debugPrint('✅ Controller selection updated');
 
     if ([
       SelectionChangedCause.longPress,
       SelectionChangedCause.drag,
       SelectionChangedCause.tap,
     ].contains(cause)) {
-      debugPrint('📞 Showing keyboard due to selection change');
       _showKeyboard();
     }
 
@@ -461,96 +300,63 @@ class _EditableTextState extends State<EditableText>
     _selectionOverlay?.update(_value);
 
     if (selection.isCollapsed) {
-      debugPrint('📊 Selection is collapsed - hiding toolbar');
       _selectionOverlay?.hide();
       _selectionOverlay = null;
     } else {
-      debugPrint('📊 Selection has content - showing toolbar');
       _selectionOverlay?.showToolbar();
     }
-    debugPrint('🎯 ========== _handleSelectionChanged() END ==========\n');
   }
 
   void _showKeyboard() {
-    debugPrint('\n⌨️ ========== _showKeyboard() ==========');
-    debugPrint('📊 _hasInputConnection: $_hasInputConnection');
-    debugPrint('📊 _textInputConnection: $_textInputConnection');
-
     // ✅ FLUTTER FRAMEWORK PATTERN: Check if connection exists AND is attached
     // When platform calls clearClient(), the connection object may still exist
     // but won't be attached to the platform anymore
     // attached getter checks: TextInput._instance._currentConnection == this
     if (_hasInputConnection && _textInputConnection!.attached) {
-      debugPrint('📞 Showing keyboard via existing attached connection');
       _textInputConnection!.show();
     } else {
-      debugPrint(
-        '📞 Connection not attached to platform - Opening new connection',
-      );
       // Clear the stale connection reference if it exists
       if (_textInputConnection != null) {
-        debugPrint(
-          '   - Clearing stale connection: ${_textInputConnection!.id}',
-        );
         _textInputConnection = null;
       }
       _openInputConnection();
     }
-    debugPrint('⌨️ ========== _showKeyboard() END ==========\n');
   }
 
   void _insertNewLine() {
-    debugPrint('\n📝 ========== _insertNewLine() ==========');
-
     if (!widget.isMultiline) {
-      debugPrint('⚠️ Not multiline - finalizing editing');
       _finalizeEditting(true);
       widget.onEditingComplete?.call(_controller.text);
-      debugPrint('📝 ========== _insertNewLine() END ==========\n');
       return;
     }
 
     final currentCursorPosition = _controller.selection.baseOffset;
-    debugPrint('📊 Current cursor position: $currentCursorPosition');
 
     final newText = _controller.text.replaceRange(
       currentCursorPosition,
       currentCursorPosition,
       '\n',
     );
-    debugPrint('📝 New text with newline: "$newText"');
 
     _value = _value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(offset: currentCursorPosition + 1),
     );
     widget.onChanged?.call(newText);
-    debugPrint('✅ Newline inserted');
-    debugPrint('📝 ========== _insertNewLine() END ==========\n');
   }
 
   void _finalizeEditting(bool shouldUnfocus) {
-    debugPrint('\n🏁 ========== _finalizeEditting() ==========');
-    debugPrint('📊 shouldUnfocus: $shouldUnfocus');
-
     _hideToolbar();
     _stopCursorBlink();
 
     if (shouldUnfocus) {
-      debugPrint('📍 Unfocusing field');
       _focusNode.unfocus();
     }
-    debugPrint('🏁 ========== _finalizeEditting() END ==========\n');
   }
 
   @override
   void updateEditingValue(TextEditingValue value) {
-    debugPrint('\n⌨️ ========== updateEditingValue() CALLED ==========');
-    debugPrint('📝 Received value: $value');
-    debugPrint('📝 Current value: $_value');
-
     if (widget.readOnly) {
-      debugPrint('⚠️ Read-only mode - only updating selection');
       value = _value.copyWith(selection: value.selection);
     }
 
@@ -559,42 +365,28 @@ class _EditableTextState extends State<EditableText>
     if (value.text == _value.text &&
         value.selection.baseOffset == _value.selection.baseOffset &&
         value.selection.extentOffset == _value.selection.extentOffset) {
-      debugPrint('✅ Value unchanged - skipping update');
-      debugPrint('⌨️ ========== updateEditingValue() END ==========\n');
       return;
     }
 
     if (value.text == _value.text) {
-      debugPrint('📊 Text unchanged - only selection changed');
       _handleSelectionChanged(value.selection, SelectionChangedCause.keyboard);
     } else {
-      debugPrint('📝 Text changed!');
-      debugPrint('   - Old text: "${_value.text}"');
-      debugPrint('   - New text: "${value.text}"');
-
       _hideToolbar();
       _value = value;
 
-      debugPrint('📢 Calling onChanged callback...');
       widget.onChanged?.call(value.text);
-      debugPrint('✅ onChanged callback completed');
 
       _handleSelectionChanged(value.selection, SelectionChangedCause.keyboard);
 
       if (_showBlinkingCursor && _cursorTimer != null) {
-        debugPrint('🔄 Restarting cursor blink');
         _stopCursorBlink(resetCharTicks: false);
         _startCursorBlink();
       }
     }
-    debugPrint('⌨️ ========== updateEditingValue() END ==========\n');
   }
 
   @override
   void performAction(TextInputAction action) {
-    debugPrint('\n🎬 ========== performAction() ==========');
-    debugPrint('🎯 Action: $action');
-
     switch (action) {
       case TextInputAction.done:
       case TextInputAction.go:
@@ -602,55 +394,36 @@ class _EditableTextState extends State<EditableText>
       case TextInputAction.send:
       case TextInputAction.next:
       case TextInputAction.previous:
-        debugPrint('✅ Finalizing editing');
         _finalizeEditting(true);
         widget.onEditingComplete?.call(_controller.text);
         break;
       case TextInputAction.none:
       case TextInputAction.unspecified:
-        debugPrint('⚠️ No action');
         break;
       case TextInputAction.newline:
-        debugPrint('📝 Inserting newline');
         _insertNewLine();
     }
-    debugPrint('🎬 ========== performAction() END ==========\n');
   }
 
   @override
   void closeConnection() {
-    debugPrint('\n🔌 ========== closeConnection() ==========');
     _closeInputConnectionIfNeeded();
-    debugPrint('🔌 ========== closeConnection() END ==========\n');
   }
 
   @override
   void insertContent(KeyboardInsertedContent content) {
-    debugPrint('\n📎 ========== insertContent() ==========');
-    debugPrint('📎 Content: $content');
-    debugPrint('📎 ========== insertContent() END ==========\n');
+    // Handle content insertion from platform
   }
 
   double get cursorOpacity =>
       _showBlinkingCursor ? _cursorBlinkOpacityController.value : 0.0;
 
   void _handleTap(TapDownDetails details) {
-    debugPrint('\n👆 ========== _handleTap() ==========');
-    debugPrint('📍 Tap position: ${details.localPosition}');
-    debugPrint('📊 Current focus state: $_hasFocus');
-
     if (widget.readOnly) {
-      debugPrint('⚠️ Read-only mode - ignoring tap');
-      debugPrint('👆 ========== _handleTap() END ==========\n');
       return;
     }
 
-    debugPrint('📍 Requesting focus...');
-    debugPrint('   - FocusNode: $_focusNode');
-    debugPrint('   - FocusNode.hasFocus before: $_hasFocus');
     _focusNode.requestFocus();
-    debugPrint('✅ Focus requested');
-    debugPrint('   - FocusNode.hasFocus after: $_hasFocus');
 
     final textPainter = TextPainter(
       text: TextSpan(
@@ -667,22 +440,14 @@ class _EditableTextState extends State<EditableText>
       Offset(details.localPosition.dx - 8, details.localPosition.dy - 12),
     );
 
-    debugPrint('🎯 Tap position offset: ${tapPosition.offset}');
-
     _handleSelectionChanged(
       TextSelection.collapsed(offset: tapPosition.offset),
       SelectionChangedCause.tap,
     );
-    debugPrint('👆 ========== _handleTap() END ==========\n');
   }
 
   void _handleLongPress(LongPressStartDetails details) {
-    debugPrint('\n👆 ========== _handleLongPress() ==========');
-    debugPrint('📍 Long press position: ${details.localPosition}');
-
     if (widget.readOnly) {
-      debugPrint('⚠️ Read-only mode - ignoring long press');
-      debugPrint('👆 ========== _handleLongPress() END ==========\n');
       return;
     }
 
@@ -716,13 +481,10 @@ class _EditableTextState extends State<EditableText>
       end++;
     }
 
-    debugPrint('📝 Selected word: "${text.substring(start, end)}"');
-
     _handleSelectionChanged(
       TextSelection(baseOffset: start, extentOffset: end),
       SelectionChangedCause.longPress,
     );
-    debugPrint('👆 ========== _handleLongPress() END ==========\n');
   }
 
   Offset _getCursorOffset(Size size, TextPainter textPainter) {
@@ -743,8 +505,6 @@ class _EditableTextState extends State<EditableText>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🎨 EditableText.build() called');
-
     return Focus(
       focusNode: _focusNode,
       child: GestureDetector(
@@ -777,23 +537,17 @@ class _EditableTextState extends State<EditableText>
 
   @override
   void bringIntoView(TextPosition position) {
-    debugPrint('🔍 bringIntoView() called: $position');
+    // Bring position into view
   }
 
   @override
   void hideToolbar([bool hideHandles = true]) {
-    debugPrint('🔧 hideToolbar() called');
     _hideToolbar();
   }
 
   @override
   void copySelection(SelectionChangedCause cause) {
-    debugPrint('\n📋 ========== copySelection() ==========');
-    debugPrint('📊 Cause: $cause');
-
     if (_value.selection.isCollapsed) {
-      debugPrint('⚠️ Selection is collapsed - nothing to copy');
-      debugPrint('📋 ========== copySelection() END ==========\n');
       return;
     }
 
@@ -801,22 +555,14 @@ class _EditableTextState extends State<EditableText>
       _value.selection.start,
       _value.selection.end,
     );
-    debugPrint('📋 Copied text: "$_selectedText"');
 
     Clipboard.setData(ClipboardData(text: _selectedText));
     _hideToolbar();
-    debugPrint('✅ Text copied to clipboard');
-    debugPrint('📋 ========== copySelection() END ==========\n');
   }
 
   @override
   void cutSelection(SelectionChangedCause cause) {
-    debugPrint('\n✂️ ========== cutSelection() ==========');
-    debugPrint('📊 Cause: $cause');
-
     if (_value.selection.isCollapsed) {
-      debugPrint('⚠️ Selection is collapsed - nothing to cut');
-      debugPrint('✂️ ========== cutSelection() END ==========\n');
       return;
     }
 
@@ -824,7 +570,6 @@ class _EditableTextState extends State<EditableText>
       _value.selection.start,
       _value.selection.end,
     );
-    debugPrint('✂️ Cut text: "$selectedText"');
 
     Clipboard.setData(ClipboardData(text: selectedText));
 
@@ -833,7 +578,6 @@ class _EditableTextState extends State<EditableText>
       _value.selection.end,
       '',
     );
-    debugPrint('📝 New text after cut: "$newText"');
 
     _value = _value.copyWith(
       text: newText,
@@ -841,24 +585,15 @@ class _EditableTextState extends State<EditableText>
     );
     widget.onChanged?.call(newText);
     _hideToolbar();
-    debugPrint('✅ Text cut successfully');
-    debugPrint('✂️ ========== cutSelection() END ==========\n');
   }
 
   @override
   Future<void> pasteText(SelectionChangedCause cause) async {
-    debugPrint('\n📌 ========== pasteText() ==========');
-    debugPrint('📊 Cause: $cause');
-
     final clibBoardData = await Clipboard.getData('text/plain');
 
     if (clibBoardData == null || clibBoardData.text == null) {
-      debugPrint('⚠️ Clipboard is empty');
-      debugPrint('📌 ========== pasteText() END ==========\n');
       return;
     }
-
-    debugPrint('📌 Pasted text: "${clibBoardData.text}"');
 
     final currentTextEdittingValue = _value;
     int currentCursorPosition = currentTextEdittingValue.selection.baseOffset;
@@ -894,28 +629,17 @@ class _EditableTextState extends State<EditableText>
       );
     }
 
-    debugPrint('📝 New text after paste: "${newTextEdittingValue.text}"');
-
     _value = newTextEdittingValue;
     widget.onChanged?.call(newTextEdittingValue.text);
     _hideToolbar();
-    debugPrint('✅ Text pasted successfully');
-    debugPrint('📌 ========== pasteText() END ==========\n');
   }
 
   @override
   void selectAll(SelectionChangedCause cause) {
-    debugPrint('\n📋 ========== selectAll() ==========');
-    debugPrint('📊 Cause: $cause');
-    debugPrint('📝 Text: "${_value.text}"');
-    debugPrint('📏 Text length: ${_value.text.length}');
-
     _handleSelectionChanged(
       TextSelection(baseOffset: 0, extentOffset: _value.text.length),
       cause,
     );
-    debugPrint('✅ All text selected');
-    debugPrint('📋 ========== selectAll() END ==========\n');
   }
 
   @override
