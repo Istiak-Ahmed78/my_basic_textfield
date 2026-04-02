@@ -451,6 +451,7 @@ class _EditableTextState extends State<EditableText>
     if ([
       SelectionChangedCause.longPress,
       SelectionChangedCause.drag,
+      SelectionChangedCause.tap,
     ].contains(cause)) {
       debugPrint('📞 Showing keyboard due to selection change');
       _showKeyboard();
