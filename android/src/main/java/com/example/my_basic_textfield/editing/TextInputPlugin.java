@@ -579,16 +579,18 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     
     mEditable.removeEditingStateListener(this);
     
-    // FIX: Don't clear configuration - keep it for reuse on second tap
-    // When keyboard is hidden and user taps field again, show() is called without setClient()
-    // If configuration is null, showTextInput() returns early and keyboard won't appear
-    // configuration = null;
+    // ✅ FLUTTER FRAMEWORK PATTERN: Clear configuration on clearClient
+    // When IME closes, framework calls clearClient() -> we must clear state
+    // This signals to show() that connection is closed and needs recreation
+    configuration = null;
     
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     
     unlockPlatformViewInputConnection();
     
     lastClientRect = null;
+    
+    android.util.Log.d(TAG, "clearTextInputClient: configuration cleared, ready for reconnection");
   }
 
   public boolean handleKeyEvent(@NonNull KeyEvent keyEvent) {

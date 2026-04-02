@@ -266,6 +266,7 @@ class _EditableTextState extends State<EditableText>
       '   - _shouldCreateInputConnection: $_shouldCreateInputConnection',
     );
     debugPrint('   - _hasInputConnection: $_hasInputConnection');
+    debugPrint('   - _textInputConnection: $_textInputConnection');
     debugPrint('   - widget.readOnly: ${widget.readOnly}');
 
     if (!_shouldCreateInputConnection) {
@@ -472,12 +473,26 @@ class _EditableTextState extends State<EditableText>
   void _showKeyboard() {
     debugPrint('\n⌨️ ========== _showKeyboard() ==========');
     debugPrint('📊 _hasInputConnection: $_hasInputConnection');
+    debugPrint('📊 _textInputConnection: $_textInputConnection');
 
-    if (_hasInputConnection) {
-      debugPrint('📞 Showing keyboard via existing connection');
+    // ✅ FLUTTER FRAMEWORK PATTERN: Check if connection exists AND is attached
+    // When platform calls clearClient(), the connection object may still exist
+    // but won't be attached to the platform anymore
+    // attached getter checks: TextInput._instance._currentConnection == this
+    if (_hasInputConnection && _textInputConnection!.attached) {
+      debugPrint('📞 Showing keyboard via existing attached connection');
       _textInputConnection!.show();
     } else {
-      debugPrint('📞 Opening new input connection');
+      debugPrint(
+        '📞 Connection not attached to platform - Opening new connection',
+      );
+      // Clear the stale connection reference if it exists
+      if (_textInputConnection != null) {
+        debugPrint(
+          '   - Clearing stale connection: ${_textInputConnection!.id}',
+        );
+        _textInputConnection = null;
+      }
       _openInputConnection();
     }
     debugPrint('⌨️ ========== _showKeyboard() END ==========\n');
