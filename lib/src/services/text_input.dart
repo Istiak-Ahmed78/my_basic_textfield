@@ -340,6 +340,11 @@ class TextInput {
       final bool selectionIsDirectional =
           call.arguments["selectionIsDirectional"];
 
+      // TEXT INPUT ISSUE DEBUG: Log platform event
+      debugPrint(
+        '📱 Platform → Dart: updateEditingState received with text: "$text"',
+      );
+
       final TextEditingValue value = TextEditingValue(
         text: text,
         selection: TextSelection(
@@ -352,7 +357,12 @@ class TextInput {
 
       final client = _textInputClients[id];
       if (client != null) {
+        // TEXT INPUT ISSUE DEBUG: Log that we're calling the client
+        debugPrint('📱 Calling client.updateEditingValue() with: "$text"');
         client.updateEditingValue(value);
+        debugPrint('📱 client.updateEditingValue() returned');
+      } else {
+        debugPrint('❌ Client not found for ID: $id');
       }
     } else if (call.method == "TextInputClient.performAction") {
       final int id = call.arguments["id"];

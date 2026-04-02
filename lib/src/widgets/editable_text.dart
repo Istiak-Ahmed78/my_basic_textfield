@@ -356,6 +356,13 @@ class _EditableTextState extends State<EditableText>
 
   @override
   void updateEditingValue(TextEditingValue value) {
+    // TEXT INPUT ISSUE DEBUG: Track when platform sends text
+    if (value.text != _value.text) {
+      debugPrint(
+        '📝 updateEditingValue: Text changed from "${_value.text}" to "${value.text}"',
+      );
+    }
+
     if (widget.readOnly) {
       value = _value.copyWith(selection: value.selection);
     }
@@ -373,8 +380,14 @@ class _EditableTextState extends State<EditableText>
     } else {
       _hideToolbar();
       _value = value;
+      // TEXT INPUT ISSUE DEBUG: Confirm text was set to controller
+      debugPrint(
+        '📝 updateEditingValue: Text set to controller: "${_value.text}"',
+      );
 
       widget.onChanged?.call(value.text);
+      // TEXT INPUT ISSUE DEBUG: Confirm callback was called
+      debugPrint('📝 updateEditingValue: onChanged callback called');
 
       _handleSelectionChanged(value.selection, SelectionChangedCause.keyboard);
 
@@ -505,6 +518,11 @@ class _EditableTextState extends State<EditableText>
 
   @override
   Widget build(BuildContext context) {
+    // TEXT INPUT ISSUE DEBUG: Log what text is being painted
+    if (_value.text.isNotEmpty) {
+      debugPrint('🎨 build: Rendering text: "${_value.text}"');
+    }
+
     return Focus(
       focusNode: _focusNode,
       child: GestureDetector(
