@@ -37,9 +37,51 @@ public class ListenableEditingState extends SpannableStringBuilder implements Te
   public ListenableEditingState(@Nullable String text, @NonNull View view) {
     super(text != null ? text : "");
     
-    // ✅ FIXED: Don't call addTextChangedListener - SpannableStringBuilder doesn't have it
-    // Just log the creation
+    // ✅ CRITICAL FIX: We override replace() and delete() methods to trigger text change notifications
+    // SpannableStringBuilder doesn't have built-in TextWatcher support, so we handle it manually
+    
     android.util.Log.d(TAG, "ListenableEditingState created with text: '" + toString() + "'");
+  }
+
+  // ✅ CRITICAL OVERRIDE: Intercept text changes to notify listeners
+  @Override
+  public SpannableStringBuilder replace(int start, int end, CharSequence tb, int tbstart, int tbend) {
+    android.util.Log.d(TAG, "replace() called: start=" + start + ", end=" + end + 
+        ", newText='" + tb.subSequence(tbstart, tbend) + "'");
+    
+    // Call beforeTextChanged
+    beforeTextChanged(this, start, end - start, tbend - tbstart);
+    
+    // Do the actual replacement
+    SpannableStringBuilder result = super.replace(start, end, tb, tbstart, tbend);
+    
+    // Call onTextChanged  
+    onTextChanged(this, start, end - start, tbend - tbstart);
+    
+    // Call afterTextChanged
+    afterTextChanged(this);
+    
+    return result;
+  }
+
+  // ✅ CRITICAL OVERRIDE: Intercept deletes to notify listeners
+  @Override
+  public SpannableStringBuilder delete(int start, int end) {
+    android.util.Log.d(TAG, "delete() called: start=" + start + ", end=" + end);
+    
+    // Call beforeTextChanged
+    beforeTextChanged(this, start, end - start, 0);
+    
+    // Do the actual deletion
+    SpannableStringBuilder result = super.delete(start, end);
+    
+    // Call onTextChanged
+    onTextChanged(this, start, end - start, 0);
+    
+    // Call afterTextChanged
+    afterTextChanged(this);
+    
+    return result;
   }
 
   public void addEditingStateListener(@NonNull EditingStateWatcher watcher) {
