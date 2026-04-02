@@ -3,6 +3,19 @@ import 'package:my_basic_textfield/src/widgets/editable_text.dart';
 import 'package:my_basic_textfield/src/services/text_editing.dart';
 
 void main() {
+  debugPrint(
+    '\n╔════════════════════════════════════════════════════════════╗',
+  );
+  debugPrint('║         MY BASIC TEXTFIELD - STARTING APP                  ║');
+  debugPrint('║                                                            ║');
+  debugPrint('║ Logging enabled for:                                       ║');
+  debugPrint('║ - Focus & tap handling                                     ║');
+  debugPrint('║ - Text input connection lifecycle                          ║');
+  debugPrint('║ - Platform method invocations                              ║');
+  debugPrint('║ - Text editing events                                      ║');
+  debugPrint(
+    '╚════════════════════════════════════════════════════════════╝\n',
+  );
   runApp(const MyApp());
 }
 

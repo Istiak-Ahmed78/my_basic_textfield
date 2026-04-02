@@ -194,15 +194,24 @@ class _EditableTextState extends State<EditableText>
   void _handleFocusChanged() {
     debugPrint('\n📍 ========== _handleFocusChanged() ==========');
     debugPrint('🎯 Has focus: $_hasFocus');
+    debugPrint('📊 Focus node details:');
+    debugPrint('   - _focusNode: $_focusNode');
+    debugPrint('   - _focusNode.hasFocus: ${_focusNode.hasFocus}');
+    debugPrint(
+      '   - _shouldCreateInputConnection: $_shouldCreateInputConnection',
+    );
+    debugPrint('   - _hasInputConnection: $_hasInputConnection');
 
     if (_hasFocus) {
       debugPrint('✅ Focus gained - Opening input connection');
       _openInputConnection();
+      debugPrint('   - _hasInputConnection after open: $_hasInputConnection');
       _startCursorBlink();
       debugPrint('✅ Cursor blink started');
     } else {
       debugPrint('❌ Focus lost - Closing input connection');
       _closeInputConnectionIfNeeded();
+      debugPrint('   - _hasInputConnection after close: $_hasInputConnection');
       _stopCursorBlink();
       debugPrint('✅ Cursor blink stopped');
     }
@@ -218,26 +227,36 @@ class _EditableTextState extends State<EditableText>
   TextInputConfiguration _getTextInputConfiguration() {
     debugPrint('\n⚙️ ========== _getTextInputConfiguration() ==========');
 
-    final config = TextInputConfiguration(
-      viewID: View.of(context).viewId,
-      inputType: widget.keyboardType ?? TextInputType.text,
-      inputAction: widget.textInputAction ?? TextInputAction.done,
-      keyboardAppearance: widget.keyboardAppearance ?? Brightness.light,
-      readOnly: widget.readOnly,
-      obscureText: widget.obscureText,
-      autocorrect: !widget.obscureText,
-      enableSuggestions: !widget.obscureText,
-      enableInteractiveSelection: true,
-    );
+    try {
+      final viewId = View.of(context).viewId;
+      debugPrint('📊 View ID obtained: $viewId');
 
-    debugPrint('✅ Configuration created:');
-    debugPrint('   - inputType: ${config.inputType}');
-    debugPrint('   - inputAction: ${config.inputAction}');
-    debugPrint('   - readOnly: ${config.readOnly}');
-    debugPrint('   - obscureText: ${config.obscureText}');
-    debugPrint('⚙️ ========== _getTextInputConfiguration() END ==========\n');
+      final config = TextInputConfiguration(
+        viewID: viewId,
+        inputType: widget.keyboardType ?? TextInputType.text,
+        inputAction: widget.textInputAction ?? TextInputAction.done,
+        keyboardAppearance: widget.keyboardAppearance ?? Brightness.light,
+        readOnly: widget.readOnly,
+        obscureText: widget.obscureText,
+        autocorrect: !widget.obscureText,
+        enableSuggestions: !widget.obscureText,
+        enableInteractiveSelection: true,
+      );
 
-    return config;
+      debugPrint('✅ Configuration created:');
+      debugPrint('   - viewID: ${config.viewID}');
+      debugPrint('   - inputType: ${config.inputType}');
+      debugPrint('   - inputAction: ${config.inputAction}');
+      debugPrint('   - readOnly: ${config.readOnly}');
+      debugPrint('   - obscureText: ${config.obscureText}');
+      debugPrint('⚙️ ========== _getTextInputConfiguration() END ==========\n');
+
+      return config;
+    } catch (e) {
+      debugPrint('❌ ERROR in _getTextInputConfiguration(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      rethrow;
+    }
   }
 
   void _openInputConnection() {
@@ -247,6 +266,7 @@ class _EditableTextState extends State<EditableText>
       '   - _shouldCreateInputConnection: $_shouldCreateInputConnection',
     );
     debugPrint('   - _hasInputConnection: $_hasInputConnection');
+    debugPrint('   - widget.readOnly: ${widget.readOnly}');
 
     if (!_shouldCreateInputConnection) {
       debugPrint(
@@ -261,13 +281,21 @@ class _EditableTextState extends State<EditableText>
       final TextInputConfiguration config = _getTextInputConfiguration();
 
       debugPrint('📞 Calling TextInput.attach()...');
+      debugPrint('   - this: $this');
+      debugPrint('   - config: $config');
       _textInputConnection = TextInput.attach(this, config);
       debugPrint('✅ TextInput.attach() completed');
       debugPrint('   - Connection: $_textInputConnection');
+      debugPrint('   - Connection ID: ${_textInputConnection?.id}');
+      debugPrint('   - Connection.attached: ${_textInputConnection?.attached}');
 
-      debugPrint('📞 Calling _textInputConnection.show()...');
-      _textInputConnection!.show();
-      debugPrint('✅ Keyboard shown');
+      if (_textInputConnection != null) {
+        debugPrint('📞 Calling _textInputConnection.show()...');
+        _textInputConnection!.show();
+        debugPrint('✅ Keyboard shown');
+      } else {
+        debugPrint('❌ ERROR: _textInputConnection is null after attach()!');
+      }
 
       _lastKnownRemoteTextEditingValue = _value;
       debugPrint(
@@ -281,14 +309,19 @@ class _EditableTextState extends State<EditableText>
 
   void _closeInputConnectionIfNeeded() {
     debugPrint('\n🔌 ========== _closeInputConnectionIfNeeded() ==========');
-    debugPrint('📊 Status: _hasInputConnection = $_hasInputConnection');
+    debugPrint('📊 Status check:');
+    debugPrint('   - _hasInputConnection: $_hasInputConnection');
+    debugPrint('   - _textInputConnection: $_textInputConnection');
 
     if (_hasInputConnection) {
       debugPrint('📞 Closing input connection...');
+      debugPrint('   - Connection ID: ${_textInputConnection?.id}');
+      debugPrint('   - Connection.attached: ${_textInputConnection?.attached}');
       _textInputConnection?.close();
       debugPrint('✅ Input connection closed');
       _textInputConnection = null;
       _lastKnownRemoteTextEditingValue = TextEditingValue.empty;
+      debugPrint('   - _textInputConnection set to null');
     } else {
       debugPrint('⚠️ No input connection to close');
     }
@@ -588,6 +621,7 @@ class _EditableTextState extends State<EditableText>
   void _handleTap(TapDownDetails details) {
     debugPrint('\n👆 ========== _handleTap() ==========');
     debugPrint('📍 Tap position: ${details.localPosition}');
+    debugPrint('📊 Current focus state: $_hasFocus');
 
     if (widget.readOnly) {
       debugPrint('⚠️ Read-only mode - ignoring tap');
@@ -596,8 +630,11 @@ class _EditableTextState extends State<EditableText>
     }
 
     debugPrint('📍 Requesting focus...');
+    debugPrint('   - FocusNode: $_focusNode');
+    debugPrint('   - FocusNode.hasFocus before: $_hasFocus');
     _focusNode.requestFocus();
     debugPrint('✅ Focus requested');
+    debugPrint('   - FocusNode.hasFocus after: $_hasFocus');
 
     final textPainter = TextPainter(
       text: TextSpan(

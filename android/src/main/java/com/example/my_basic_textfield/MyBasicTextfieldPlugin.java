@@ -131,48 +131,88 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
 
   private void initializeTextInputPlugin() {
     if (activity == null || flutterEngine == null) {
-      android.util.Log.e(TAG, "Cannot initialize TextInputPlugin: activity or engine is null");
+      android.util.Log.e(TAG, "❌ Cannot initialize TextInputPlugin: activity or engine is null");
       return;
     }
 
-    android.util.Log.d(TAG, "🔧 Initializing TextInputPlugin...");
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+    android.util.Log.d(TAG, "🔧 INITIALIZING TEXTINPUTPLUGIN");
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
 
     View rootView = activity.getWindow().getDecorView().getRootView();
     android.util.Log.d(TAG, "✅ Root view obtained: " + rootView.getClass().getSimpleName());
 
-    // ✅ FIXED: Access channels via reflection or use the engine's dart executor
-    // Try to get TextInputChannel from the engine
+    // ✅ FIXED: Access Flutter's SYSTEM TextInputChannel via reflection
+    // Instead of creating new channels, get them from the engine's internal system channels
     TextInputChannel textInputChannel = null;
     ScribeChannel scribeChannel = null;
 
     try {
-      // Method 1: Try using getDartExecutor() to get the channels
-      // This is the more reliable way in newer Flutter versions
-      Object dartExecutor = flutterEngine.getDartExecutor();
-      android.util.Log.d(TAG, "✅ DartExecutor obtained: " + dartExecutor.getClass().getSimpleName());
-
-      // Create new channels if they don't exist
-      textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
-      scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
-
-      android.util.Log.d(TAG, "✅ Channels created successfully");
-    } catch (Exception e) {
-      android.util.Log.e(TAG, "❌ Error creating channels: " + e.getMessage());
+      android.util.Log.d(TAG, "📢 Accessing Flutter's system channels via reflection...");
+      
+      // Get the system channels from the FlutterEngine using reflection
+      // Flutter's FlutterEngine maintains system channels in private fields
+      java.lang.reflect.Field textInputChannelField = 
+          flutterEngine.getClass().getDeclaredField("textInputChannel");
+      textInputChannelField.setAccessible(true);
+      textInputChannel = (TextInputChannel) textInputChannelField.get(flutterEngine);
+      
+      if (textInputChannel != null) {
+        android.util.Log.d(TAG, "✅ Flutter's TextInputChannel obtained via reflection");
+      } else {
+        android.util.Log.w(TAG, "⚠️ TextInputChannel is null, will create new one");
+        textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
+        android.util.Log.d(TAG, "✅ New TextInputChannel created as fallback");
+      }
+      
+      java.lang.reflect.Field scribeChannelField = 
+          flutterEngine.getClass().getDeclaredField("scribeChannel");
+      scribeChannelField.setAccessible(true);
+      scribeChannel = (ScribeChannel) scribeChannelField.get(flutterEngine);
+      
+      if (scribeChannel != null) {
+        android.util.Log.d(TAG, "✅ Flutter's ScribeChannel obtained via reflection");
+      } else {
+        android.util.Log.w(TAG, "⚠️ ScribeChannel is null, will create new one");
+        scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
+        android.util.Log.d(TAG, "✅ New ScribeChannel created as fallback");
+      }
+      
+      android.util.Log.d(TAG, "✅ System channels obtained successfully");
+      
+    } catch (NoSuchFieldException e) {
+      android.util.Log.w(TAG, "⚠️ System channels not found via reflection, creating new ones");
+      android.util.Log.w(TAG, "   Error: " + e.getMessage());
+      
+      try {
+        textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
+        scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
+        android.util.Log.d(TAG, "✅ New channels created as fallback");
+      } catch (Exception fallbackError) {
+        android.util.Log.e(TAG, "❌ Failed to create channels: " + fallbackError.getMessage());
+        fallbackError.printStackTrace();
+      }
+    } catch (IllegalAccessException e) {
+      android.util.Log.e(TAG, "❌ Reflection access denied: " + e.getMessage());
       e.printStackTrace();
-
-      // Fallback: Create with null - Flutter will initialize them
-      android.util.Log.d(TAG, "⚠️ Using fallback: channels will be initialized by Flutter");
     }
 
+    android.util.Log.d(TAG, "📢 Getting PlatformViewsController...");
     PlatformViewsController platformViewsController =
         flutterEngine.getPlatformViewsController();
-    android.util.Log.d(TAG, "✅ PlatformViewsController obtained");
+    android.util.Log.d(TAG, "✅ PlatformViewsController obtained: " + (platformViewsController != null ? "not null" : "null"));
 
+    android.util.Log.d(TAG, "📢 Getting PlatformViewsController2...");
     PlatformViewsController2 platformViewsController2 =
         flutterEngine.getPlatformViewsController2();
-    android.util.Log.d(TAG, "✅ PlatformViewsController2 obtained");
+    android.util.Log.d(TAG, "✅ PlatformViewsController2 obtained: " + (platformViewsController2 != null ? "not null" : "null"));
 
     // Create the TextInputPlugin
+    android.util.Log.d(TAG, "📢 Creating TextInputPlugin instance...");
+    android.util.Log.d(TAG, "  - rootView: " + rootView.getClass().getSimpleName());
+    android.util.Log.d(TAG, "  - textInputChannel: " + (textInputChannel != null ? "initialized" : "null"));
+    android.util.Log.d(TAG, "  - scribeChannel: " + (scribeChannel != null ? "initialized" : "null"));
+    
     textInputPlugin =
         new TextInputPlugin(
             rootView,
@@ -182,6 +222,7 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
             platformViewsController2);
 
     android.util.Log.d(TAG, "✅ TextInputPlugin created and initialized successfully!");
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
   }
 
   private void cleanupTextInputPlugin() {

@@ -47,6 +47,14 @@ public class InputConnectionAdaptor extends BaseInputConnection {
     this.scribeChannel = scribeChannel;
     mEditable = editable;
     this.outAttrs = outAttrs;
+    
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+    android.util.Log.d(TAG, "🔧 InputConnectionAdaptor created");
+    android.util.Log.d(TAG, "  - clientId: " + mClientId);
+    android.util.Log.d(TAG, "  - view: " + view.getClass().getSimpleName());
+    android.util.Log.d(TAG, "  - editable: " + editable.toString());
+    android.util.Log.d(TAG, "  - outAttrs.inputType: 0x" + Integer.toHexString(outAttrs.inputType));
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
   }
 
   @Override
@@ -56,7 +64,10 @@ public class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
-    android.util.Log.d(TAG, "commitText: text='" + text + "', newCursorPosition=" + newCursorPosition);
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+    android.util.Log.d(TAG, "✏️ commitText() called");
+    android.util.Log.d(TAG, "  - text: '" + text + "'");
+    android.util.Log.d(TAG, "  - newCursorPosition: " + newCursorPosition);
 
     if (mEditable.isComposingRangeValid()) {
       mEditable.delete(mEditable.getComposingStart(), mEditable.getComposingEnd());
@@ -73,8 +84,10 @@ public class InputConnectionAdaptor extends BaseInputConnection {
 
     mEditable.clearComposingRegion();
 
-    android.util.Log.d(TAG, "commitText result: text='" + mEditable.toString() + 
-        "', selection=" + selectionStart + "-" + selectionEnd);
+    android.util.Log.d(TAG, "✅ commitText completed");
+    android.util.Log.d(TAG, "  - text result: '" + mEditable.toString() + "'");
+    android.util.Log.d(TAG, "  - selection: " + selectionStart + "-" + selectionEnd);
+    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
 
     return true;
   }

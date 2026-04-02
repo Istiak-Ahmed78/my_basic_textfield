@@ -256,12 +256,25 @@ class TextInput {
     );
     debugPrint('📊 Configuration: $configuration');
 
-    final connection = TextInputConnection._(client);
-    debugPrint('✅ TextInputConnection created with ID: ${connection.id}');
+    try {
+      final connection = TextInputConnection._(client);
+      debugPrint('✅ TextInputConnection created with ID: ${connection.id}');
+      debugPrint(
+        '   - Client registered in _textInputClients: ${_textInputClients.containsKey(connection.id)}',
+      );
 
-    _instance._attach(connection, configuration);
-    debugPrint('📞 ========== TextInput.attach() END ==========\n');
-    return connection;
+      _instance._attach(connection, configuration);
+      debugPrint('✅ _attach() completed successfully');
+      debugPrint('📞 ========== TextInput.attach() END ==========\n');
+      return connection;
+    } catch (e) {
+      debugPrint('❌ ERROR in TextInput.attach(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '📞 ========== TextInput.attach() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 
   void _attach(
@@ -272,12 +285,24 @@ class TextInput {
     debugPrint('📊 Connection ID: ${connection.id}');
     debugPrint('📊 Configuration: $configuration');
 
-    _currentConfiguration = configuration;
-    _currentConnection = connection;
-    debugPrint('✅ Current connection set');
+    try {
+      _currentConfiguration = configuration;
+      _currentConnection = connection;
+      debugPrint('✅ Current connection set');
+      debugPrint('   - _currentConnection.id: ${_currentConnection?.id}');
+      debugPrint('   - _currentConfiguration: $_currentConfiguration');
 
-    _setClient(connection.client, configuration);
-    debugPrint('🔌 ========== TextInput._attach() END ==========\n');
+      _setClient(connection.client, configuration);
+      debugPrint('✅ _setClient() completed');
+      debugPrint('🔌 ========== TextInput._attach() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in TextInput._attach(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '🔌 ========== TextInput._attach() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 
   void _setClient(
@@ -286,48 +311,97 @@ class TextInput {
   ) {
     debugPrint('\n🎯 ========== TextInput._setClient() ==========');
     debugPrint('📊 Client type: ${client.runtimeType}');
+    debugPrint('📊 Client: $client');
+    debugPrint('📊 Configuration: $configuration');
     debugPrint('📊 Number of controls: ${_textInputControls.length}');
 
-    for (final control in _textInputControls) {
-      debugPrint('📞 Calling control.attach() for ${control.runtimeType}');
-      control.attach(client, configuration);
-      debugPrint('✅ control.attach() completed');
+    try {
+      for (final control in _textInputControls) {
+        debugPrint('📞 Calling control.attach() for ${control.runtimeType}');
+        debugPrint('   - Control: $control');
+        control.attach(client, configuration);
+        debugPrint('✅ control.attach() completed for ${control.runtimeType}');
+      }
+      debugPrint('✅ All controls attached successfully');
+      debugPrint('🎯 ========== TextInput._setClient() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in TextInput._setClient(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '🎯 ========== TextInput._setClient() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
     }
-    debugPrint('🎯 ========== TextInput._setClient() END ==========\n');
   }
 
   void _setEditingState(TextEditingValue value) {
     debugPrint('\n📝 ========== TextInput._setEditingState() ==========');
     debugPrint('📊 Value: $value');
+    debugPrint('📊 Number of controls: ${_textInputControls.length}');
 
-    for (final control in _textInputControls) {
+    try {
+      for (final control in _textInputControls) {
+        debugPrint(
+          '📞 Calling control.setEditingState() for ${control.runtimeType}',
+        );
+        control.setEditingState(value);
+        debugPrint('✅ control.setEditingState() completed');
+      }
+      debugPrint('📝 ========== TextInput._setEditingState() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in _setEditingState(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
       debugPrint(
-        '📞 Calling control.setEditingState() for ${control.runtimeType}',
+        '📝 ========== TextInput._setEditingState() END (WITH ERROR) ==========\n',
       );
-      control.setEditingState(value);
-      debugPrint('✅ control.setEditingState() completed');
+      rethrow;
     }
-    debugPrint('📝 ========== TextInput._setEditingState() END ==========\n');
   }
 
   void _show() {
     debugPrint('\n⌨️ ========== TextInput._show() ==========');
-    for (final control in _textInputControls) {
-      debugPrint('📞 Calling control.show() for ${control.runtimeType}');
-      control.show();
-      debugPrint('✅ control.show() completed');
+    debugPrint('📊 Number of controls: ${_textInputControls.length}');
+
+    try {
+      for (final control in _textInputControls) {
+        debugPrint('📞 Calling control.show() for ${control.runtimeType}');
+        debugPrint('   - Control: $control');
+        control.show();
+        debugPrint('✅ control.show() completed for ${control.runtimeType}');
+      }
+      debugPrint('✅ All controls shown successfully');
+      debugPrint('⌨️ ========== TextInput._show() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in _show(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '⌨️ ========== TextInput._show() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
     }
-    debugPrint('⌨️ ========== TextInput._show() END ==========\n');
   }
 
   void _hide() {
     debugPrint('\n⌨️ ========== TextInput._hide() ==========');
-    for (final control in _textInputControls) {
-      debugPrint('📞 Calling control.hide() for ${control.runtimeType}');
-      control.hide();
-      debugPrint('✅ control.hide() completed');
+    debugPrint('📊 Number of controls: ${_textInputControls.length}');
+
+    try {
+      for (final control in _textInputControls) {
+        debugPrint('📞 Calling control.hide() for ${control.runtimeType}');
+        debugPrint('   - Control: $control');
+        control.hide();
+        debugPrint('✅ control.hide() completed for ${control.runtimeType}');
+      }
+      debugPrint('✅ All controls hidden successfully');
+      debugPrint('⌨️ ========== TextInput._hide() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in _hide(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '⌨️ ========== TextInput._hide() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
     }
-    debugPrint('⌨️ ========== TextInput._hide() END ==========\n');
   }
 
   // ✅ FIX #2: ADD DEBUG LOGGING TO METHOD CALL HANDLER
@@ -518,10 +592,28 @@ class TextInputConnection {
     debugPrint('\n⌨️ ========== TextInputConnection.show() ==========');
     debugPrint('📊 ID: $id');
     debugPrint('📊 Attached: $attached');
+    debugPrint('📊 _closed: $_closed');
+
+    if (_closed) {
+      debugPrint('⚠️ Connection is closed - cannot show');
+      debugPrint('⌨️ ========== TextInputConnection.show() END ==========\n');
+      return;
+    }
 
     assert(attached, "Cannot show a TextInputConnection that is not attached.");
-    TextInput._instance._show();
-    debugPrint('⌨️ ========== TextInputConnection.show() END ==========\n');
+    try {
+      debugPrint('📞 Calling TextInput._instance._show()...');
+      TextInput._instance._show();
+      debugPrint('✅ TextInput._instance._show() completed');
+      debugPrint('⌨️ ========== TextInputConnection.show() END ==========\n');
+    } catch (e) {
+      debugPrint('❌ ERROR in show(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '⌨️ ========== TextInputConnection.show() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 
   void hide() {
@@ -541,15 +633,36 @@ class TextInputConnection {
     debugPrint('📊 ID: $id');
     debugPrint('📊 Value: $value');
     debugPrint('📊 Attached: $attached');
+    debugPrint('📊 _closed: $_closed');
+
+    if (_closed) {
+      debugPrint('⚠️ Connection is closed - cannot set editing state');
+      debugPrint(
+        '📝 ========== TextInputConnection.setEditingState() END ==========\n',
+      );
+      return;
+    }
 
     assert(
       attached,
       "Cannot set editing state on a TextInputConnection that is not attached.",
     );
-    TextInput._instance._setEditingState(value);
-    debugPrint(
-      '📝 ========== TextInputConnection.setEditingState() END ==========\n',
-    );
+
+    try {
+      debugPrint('📞 Calling TextInput._instance._setEditingState()...');
+      TextInput._instance._setEditingState(value);
+      debugPrint('✅ TextInput._instance._setEditingState() completed');
+      debugPrint(
+        '📝 ========== TextInputConnection.setEditingState() END ==========\n',
+      );
+    } catch (e) {
+      debugPrint('❌ ERROR in setEditingState(): $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '📝 ========== TextInputConnection.setEditingState() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 }
 
@@ -572,18 +685,39 @@ class _PlatformTextInputControl with TextInputControl {
   @override
   void attach(TextInputClient client, TextInputConfiguration configuration) {
     debugPrint('\n🔌 ========== _PlatformTextInputControl.attach() ==========');
+    debugPrint('📊 Client type: ${client.runtimeType}');
     debugPrint('📊 Client ID: ${TextInput.instance._currentConnection?.id}');
     debugPrint('📊 Configuration: $configuration');
+    debugPrint('📊 MethodChannel: $_channel');
 
-    debugPrint('📞 Invoking method: TextInput.attach');
-    _channel?.invokeMethod("TextInput.attach", {
-      "id": TextInput.instance._currentConnection?.id,
-      "configuration": configuration.toJson(),
-    });
-    debugPrint('✅ Method invoked');
-    debugPrint(
-      '🔌 ========== _PlatformTextInputControl.attach() END ==========\n',
-    );
+    if (_channel == null) {
+      debugPrint('❌ ERROR: MethodChannel is null!');
+      debugPrint(
+        '🔌 ========== _PlatformTextInputControl.attach() END (WITH ERROR) ==========\n',
+      );
+      return;
+    }
+
+    try {
+      debugPrint('📞 Invoking method: TextInput.attach');
+      debugPrint('   - With ID: ${TextInput.instance._currentConnection?.id}');
+      debugPrint('   - With configuration: ${configuration.toJson()}');
+      _channel!.invokeMethod("TextInput.attach", {
+        "id": TextInput.instance._currentConnection?.id,
+        "configuration": configuration.toJson(),
+      });
+      debugPrint('✅ Method invoked successfully');
+      debugPrint(
+        '🔌 ========== _PlatformTextInputControl.attach() END ==========\n',
+      );
+    } catch (e) {
+      debugPrint('❌ ERROR invoking TextInput.attach: $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '🔌 ========== _PlatformTextInputControl.attach() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 
   @override
@@ -645,12 +779,31 @@ class _PlatformTextInputControl with TextInputControl {
   @override
   void show() {
     debugPrint('\n⌨️ ========== _PlatformTextInputControl.show() ==========');
-    debugPrint('📞 Invoking method: TextInput.show');
-    _channel?.invokeMethod("TextInput.show");
-    debugPrint('✅ Method invoked');
-    debugPrint(
-      '⌨️ ========== _PlatformTextInputControl.show() END ==========\n',
-    );
+    debugPrint('📊 MethodChannel: $_channel');
+
+    if (_channel == null) {
+      debugPrint('❌ ERROR: MethodChannel is null!');
+      debugPrint(
+        '⌨️ ========== _PlatformTextInputControl.show() END (WITH ERROR) ==========\n',
+      );
+      return;
+    }
+
+    try {
+      debugPrint('📞 Invoking method: TextInput.show');
+      _channel!.invokeMethod("TextInput.show");
+      debugPrint('✅ Method invoked successfully');
+      debugPrint(
+        '⌨️ ========== _PlatformTextInputControl.show() END ==========\n',
+      );
+    } catch (e) {
+      debugPrint('❌ ERROR invoking TextInput.show: $e');
+      debugPrint('   - Stack trace: ${StackTrace.current}');
+      debugPrint(
+        '⌨️ ========== _PlatformTextInputControl.show() END (WITH ERROR) ==========\n',
+      );
+      rethrow;
+    }
   }
 
   @override
