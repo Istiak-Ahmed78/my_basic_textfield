@@ -357,10 +357,19 @@ class _EditableTextState extends State<EditableText>
   @override
   void updateEditingValue(TextEditingValue value) {
     // TEXT INPUT ISSUE DEBUG: Track when platform sends text
+    debugPrint(
+      '╔════════════════════════════════════════════════════════════╗',
+    );
+    debugPrint('║ 📱 updateEditingValue CALLED from platform               ║');
+    debugPrint('├─ text: "${value.text}"');
+    debugPrint(
+      '├─ selection: ${value.selection.baseOffset}-${value.selection.extentOffset}',
+    );
+
     if (value.text != _value.text) {
-      debugPrint(
-        '📝 updateEditingValue: Text changed from "${_value.text}" to "${value.text}"',
-      );
+      debugPrint('├─ 📝 TEXT CHANGED from "${_value.text}" to "${value.text}"');
+    } else {
+      debugPrint('├─ Text same as before: "${_value.text}"');
     }
 
     if (widget.readOnly) {
@@ -372,22 +381,26 @@ class _EditableTextState extends State<EditableText>
     if (value.text == _value.text &&
         value.selection.baseOffset == _value.selection.baseOffset &&
         value.selection.extentOffset == _value.selection.extentOffset) {
+      debugPrint('├─ No changes detected, returning early');
+      debugPrint(
+        '╚════════════════════════════════════════════════════════════╝',
+      );
       return;
     }
 
     if (value.text == _value.text) {
+      debugPrint('├─ Only selection changed, calling _handleSelectionChanged');
       _handleSelectionChanged(value.selection, SelectionChangedCause.keyboard);
     } else {
+      debugPrint('├─ Text changed, hiding toolbar and updating controller');
       _hideToolbar();
       _value = value;
-      // TEXT INPUT ISSUE DEBUG: Confirm text was set to controller
-      debugPrint(
-        '📝 updateEditingValue: Text set to controller: "${_value.text}"',
-      );
+
+      debugPrint('├─ ✅ Text SET to controller: "${_value.text}"');
 
       widget.onChanged?.call(value.text);
-      // TEXT INPUT ISSUE DEBUG: Confirm callback was called
-      debugPrint('📝 updateEditingValue: onChanged callback called');
+
+      debugPrint('├─ ✅ onChanged callback CALLED with: "${value.text}"');
 
       _handleSelectionChanged(value.selection, SelectionChangedCause.keyboard);
 
@@ -396,6 +409,9 @@ class _EditableTextState extends State<EditableText>
         _startCursorBlink();
       }
     }
+    debugPrint(
+      '╚════════════════════════════════════════════════════════════╝',
+    );
   }
 
   @override

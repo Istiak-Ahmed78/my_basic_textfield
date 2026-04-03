@@ -272,13 +272,27 @@ class TextInput {
     TextInputClient client,
     TextInputConfiguration configuration,
   ) {
+    debugPrint(
+      '╔════════════════════════════════════════════════════════════╗',
+    );
+    debugPrint('║ 📞 _setClient called from platform                       ║');
+    debugPrint('├─ client: ${client.runtimeType}');
+    debugPrint('├─ configuration: ${configuration.inputType}');
+    debugPrint('├─ controls count: ${_textInputControls.length}');
+
     try {
       for (final control in _textInputControls) {
+        debugPrint('├─ Attaching to control: ${control.runtimeType}');
         control.attach(client, configuration);
       }
+      debugPrint('├─ ✅ All controls attached successfully');
     } catch (e) {
+      debugPrint('├─ ❌ Error attaching controls: $e');
       rethrow;
     }
+    debugPrint(
+      '╚════════════════════════════════════════════════════════════╝',
+    );
   }
 
   void _setEditingState(TextEditingValue value) {
@@ -342,8 +356,14 @@ class TextInput {
 
       // TEXT INPUT ISSUE DEBUG: Log platform event
       debugPrint(
-        '📱 Platform → Dart: updateEditingState received with text: "$text"',
+        '╔════════════════════════════════════════════════════════════╗',
       );
+      debugPrint(
+        '║ 📱 updateEditingState METHOD CALL received from platform ║',
+      );
+      debugPrint('├─ clientId: $id');
+      debugPrint('├─ text: "$text"');
+      debugPrint('├─ selection: $selectionBase-$selectionExtent');
 
       final TextEditingValue value = TextEditingValue(
         text: text,
@@ -357,13 +377,16 @@ class TextInput {
 
       final client = _textInputClients[id];
       if (client != null) {
-        // TEXT INPUT ISSUE DEBUG: Log that we're calling the client
-        debugPrint('📱 Calling client.updateEditingValue() with: "$text"');
+        debugPrint('├─ Client found, calling updateEditingValue()');
         client.updateEditingValue(value);
-        debugPrint('📱 client.updateEditingValue() returned');
+        debugPrint('├─ ✅ updateEditingValue() returned successfully');
       } else {
-        debugPrint('❌ Client not found for ID: $id');
+        debugPrint('├─ ❌ Client not found for ID: $id');
+        debugPrint('├─ Available clients: ${_textInputClients.keys.toList()}');
       }
+      debugPrint(
+        '╚════════════════════════════════════════════════════════════╝',
+      );
     } else if (call.method == "TextInputClient.performAction") {
       final int id = call.arguments["id"];
       final TextInputAction action =
