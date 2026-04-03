@@ -64,12 +64,15 @@ public class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
-    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
-    android.util.Log.d(TAG, "✏️ commitText() called");
-    android.util.Log.d(TAG, "  - text: '" + text + "'");
-    android.util.Log.d(TAG, "  - newCursorPosition: " + newCursorPosition);
+    android.util.Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗");
+    android.util.Log.d(TAG, "║ 🎯 commitText() CALLED - USER TYPED!                    ║");
+    android.util.Log.d(TAG, "║ ✅ KEYBOARD INPUT REACHING ANDROID CODE ✅             ║");
+    android.util.Log.d(TAG, "├─ text: '" + text + "'");
+    android.util.Log.d(TAG, "├─ newCursorPosition: " + newCursorPosition);
+    android.util.Log.d(TAG, "├─ mEditable before: '" + mEditable.toString() + "'");
 
     if (mEditable.isComposingRangeValid()) {
+      android.util.Log.d(TAG, "├─ Deleting composing range: " + mEditable.getComposingStart() + "-" + mEditable.getComposingEnd());
       mEditable.delete(mEditable.getComposingStart(), mEditable.getComposingEnd());
     }
 
@@ -78,16 +81,17 @@ public class InputConnectionAdaptor extends BaseInputConnection {
     int selectionStart = Math.max(0, cursorPos + newCursorPosition - 1);
     int selectionEnd = Math.max(0, cursorPos + newCursorPosition);
 
+    android.util.Log.d(TAG, "├─ Calling mEditable.replace(" + cursorPos + ", " + cursorPos + ", '" + text + "')");
     mEditable.replace(cursorPos, cursorPos, text);
 
     mEditable.setSelection(selectionStart, selectionEnd);
 
     mEditable.clearComposingRegion();
 
-    android.util.Log.d(TAG, "✅ commitText completed");
-    android.util.Log.d(TAG, "  - text result: '" + mEditable.toString() + "'");
-    android.util.Log.d(TAG, "  - selection: " + selectionStart + "-" + selectionEnd);
-    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+    android.util.Log.d(TAG, "├─ ✅ commitText completed successfully");
+    android.util.Log.d(TAG, "├─ mEditable after: '" + mEditable.toString() + "'");
+    android.util.Log.d(TAG, "├─ selection: " + selectionStart + "-" + selectionEnd);
+    android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
 
     return true;
   }

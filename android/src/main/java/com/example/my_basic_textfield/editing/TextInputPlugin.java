@@ -299,32 +299,47 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   public InputConnection createInputConnection(
       @NonNull View view, @NonNull EditorInfo outAttrs) {
     
-    android.util.Log.d(TAG, "createInputConnection: inputTarget=" + inputTarget);
+    android.util.Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗");
+    android.util.Log.d(TAG, "║ 🔌 createInputConnection CALLED                         ║");
+    android.util.Log.d(TAG, "├─ inputTarget.type=" + inputTarget.type);
+    android.util.Log.d(TAG, "├─ inputTarget.id=" + inputTarget.id);
+    android.util.Log.d(TAG, "├─ configuration=" + (configuration != null ? "NOT NULL" : "NULL ❌"));
+    android.util.Log.d(TAG, "├─ mEditable=" + mEditable.toString());
+    android.util.Log.d(TAG, "├─ view=" + view.getClass().getSimpleName());
 
     if (inputTarget.type == InputTarget.Type.NO_TARGET) {
       lastInputConnection = null;
-      android.util.Log.w(TAG, "createInputConnection: NO_TARGET, returning null");
+      android.util.Log.w(TAG, "├─ NO_TARGET, RETURNING NULL");
+      android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
       return null;
     }
 
     if (inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW) {
-      android.util.Log.d(TAG, "createInputConnection: PHYSICAL_DISPLAY_PLATFORM_VIEW");
+      android.util.Log.d(TAG, "├─ PHYSICAL_DISPLAY_PLATFORM_VIEW, RETURNING NULL");
+      android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
       return null;
     }
 
     if (inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW) {
       if (isInputConnectionLocked) {
+        android.util.Log.d(TAG, "├─ VIRTUAL_DISPLAY_PLATFORM_VIEW (locked), returning cached connection");
+        android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
         return lastInputConnection;
       }
+      android.util.Log.d(TAG, "├─ VIRTUAL_DISPLAY_PLATFORM_VIEW, creating new connection");
       lastInputConnection =
           platformViewsController
               .getPlatformViewById(inputTarget.id)
               .onCreateInputConnection(outAttrs);
+      android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
       return lastInputConnection;
     }
 
     if (configuration == null) {
-      android.util.Log.e(TAG, "createInputConnection: configuration is null!");
+      android.util.Log.e(TAG, "├─ ❌ CONFIGURATION IS NULL - CANNOT CREATE CONNECTION");
+      android.util.Log.e(TAG, "├─ This happens when setClient() hasn't been called yet");
+      android.util.Log.e(TAG, "├─ OR when clearClient() was called and connection closed");
+      android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
       return null;
     }
 
@@ -333,7 +348,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         ? configuration.inputType.name().toLowerCase() 
         : "text";
     
-    android.util.Log.d(TAG, "createInputConnection: inputType=" + inputType);
+    android.util.Log.d(TAG, "├─ ✅ CONFIGURATION IS VALID");
+    android.util.Log.d(TAG, "├─ inputType=" + inputType);
 
     outAttrs.inputType =
         inputTypeFromTextInputType(
@@ -379,9 +395,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 
-    lastInputConnection = connection;
+     lastInputConnection = connection;
     
-    android.util.Log.d(TAG, "createInputConnection: created connection for client " + inputTarget.id);
+    android.util.Log.d(TAG, "├─ ✅ InputConnectionAdaptor CREATED");
+    android.util.Log.d(TAG, "├─ connection=" + connection);
+    android.util.Log.d(TAG, "├─ clientId=" + inputTarget.id);
+    android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
 
     return lastInputConnection;
   }
@@ -435,16 +454,21 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   @VisibleForTesting
   void setTextInputClient(int client, InputConfiguration configuration) {
-    android.util.Log.d(TAG, "setTextInputClient: client=" + client + 
-        ", config=" + configuration);
+    android.util.Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗");
+    android.util.Log.d(TAG, "║ 📞 setTextInputClient CALLED                            ║");
+    android.util.Log.d(TAG, "├─ client=" + client);
+    android.util.Log.d(TAG, "├─ configuration=" + configuration);
+    android.util.Log.d(TAG, "├─ Setting configuration for InputConnection to use");
 
     this.configuration = configuration;
     
     inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
+    android.util.Log.d(TAG, "├─ inputTarget set to FRAMEWORK_CLIENT");
 
     mEditable.removeEditingStateListener(this);
     
     mEditable = new ListenableEditingState(null, mView);
+    android.util.Log.d(TAG, "├─ New ListenableEditingState created");
 
     mRestartInputPending = true;
     
@@ -453,13 +477,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     lastClientRect = null;
     
     mEditable.addEditingStateListener(this);
+    android.util.Log.d(TAG, "├─ TextInputPlugin added as listener to mEditable");
 
     // ✅ FIXED: Immediately restart input to initialize keyboard
-    android.util.Log.d(TAG, "setTextInputClient: calling restartInput immediately");
+    android.util.Log.d(TAG, "├─ Calling mImm.restartInput() to trigger createInputConnection()");
     mImm.restartInput(mView);
     mRestartInputPending = false;
 
-    android.util.Log.d(TAG, "setTextInputClient: client set and input restarted");
+    android.util.Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝");
   }
 
   private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
