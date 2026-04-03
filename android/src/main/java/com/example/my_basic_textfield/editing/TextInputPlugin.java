@@ -82,68 +82,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 
     this.textInputChannel = textInputChannel;
-    
-    textInputChannel.setTextInputMethodHandler(
-        new TextInputChannel.TextInputMethodHandler() {
-          @Override
-          public void show() {
-            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.show() called");
-            showTextInput(mView);
-          }
-
-          @Override
-          public void hide() {
-            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.hide() called");
-            hideTextInput(mView);
-          }
-
-          @Override
-          public void requestAutofill() {
-          }
-
-          @Override
-          public void finishAutofillContext(boolean shouldSave) {
-          }
-
-          @Override
-          public void setClient(
-              int textInputClientId, TextInputChannel.Configuration flutterConfig) {
-            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.setClient() called with clientId=" + textInputClientId);
-            
-            // ✅ CONVERT Flutter's Configuration to our InputConfiguration
-            InputConfiguration config = convertFlutterConfiguration(flutterConfig);
-            setTextInputClient(textInputClientId, config);
-          }
-
-          @Override
-          public void setPlatformViewClient(int platformViewId, boolean usesVirtualDisplay) {
-            setPlatformViewTextInputClient(platformViewId, usesVirtualDisplay);
-          }
-
-          @Override
-          public void setEditingState(TextInputChannel.TextEditState editingState) {
-            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.setEditingState() called");
-            setTextInputEditingState(mView, editingState);
-          }
-
-          @Override
-          public void setEditableSizeAndTransform(double width, double height, double[] transform) {
-            saveEditableSizeAndTransform(width, height, transform);
-          }
-
-          @Override
-          public void clearClient() {
-            android.util.Log.d(TAG, "🔊 TextInputMethodHandler.clearClient() called");
-            clearTextInputClient();
-          }
-
-          @Override
-          public void sendAppPrivateCommand(String action, android.os.Bundle data) {
-            sendTextInputAppPrivateCommand(action, data);
-          }
-        });
-
-    textInputChannel.requestExistingInputState();
 
     this.scribeChannel = scribeChannel;
     this.platformViewsController = platformViewsController;
@@ -423,6 +361,62 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   public void sendTextInputAppPrivateCommand(@NonNull String action, @NonNull android.os.Bundle data) {
     mImm.sendAppPrivateCommand(mView, action, data);
+  }
+
+  // ✅ PUBLIC WRAPPER METHODS FOR TextInputMethodHandler
+  // These methods are called by the framework via TextInputMethodHandler interface
+  // They delegate to the private implementation methods
+
+  public void show() {
+    android.util.Log.d(TAG, "🔌 show() wrapper called");
+    showTextInput(mView);
+  }
+
+  public void hide() {
+    android.util.Log.d(TAG, "🔌 hide() wrapper called");
+    hideTextInput(mView);
+  }
+
+  public void requestAutofill() {
+    android.util.Log.d(TAG, "🔌 requestAutofill() wrapper called");
+    // Currently no-op in Flutter's implementation
+  }
+
+  public void setClient(int textInputClientId, TextInputChannel.Configuration configuration) {
+    android.util.Log.d(TAG, "🔌 setClient() wrapper called with clientId=" + textInputClientId);
+    // Convert Flutter's Configuration to our InputConfiguration
+    InputConfiguration config = convertFlutterConfiguration(configuration);
+    setTextInputClient(textInputClientId, config);
+  }
+
+  public void setPlatformViewClient(int platformViewId, boolean usesVirtualDisplay) {
+    android.util.Log.d(TAG, "🔌 setPlatformViewClient() wrapper called");
+    setPlatformViewTextInputClient(platformViewId, usesVirtualDisplay);
+  }
+
+  public void setEditableSizeAndTransform(double width, double height, double[] transform) {
+    android.util.Log.d(TAG, "🔌 setEditableSizeAndTransform() wrapper called");
+    saveEditableSizeAndTransform(width, height, transform);
+  }
+
+  public void setEditingState(TextInputChannel.TextEditState editingState) {
+    android.util.Log.d(TAG, "🔌 setEditingState() wrapper called");
+    setTextInputEditingState(mView, editingState);
+  }
+
+  public void clearClient() {
+    android.util.Log.d(TAG, "🔌 clearClient() wrapper called");
+    clearTextInputClient();
+  }
+
+  public void sendAppPrivateCommand(String action, android.os.Bundle data) {
+    android.util.Log.d(TAG, "🔌 sendAppPrivateCommand() wrapper called");
+    sendTextInputAppPrivateCommand(action, data);
+  }
+
+  public void finishAutofillContext(boolean shouldSave) {
+    android.util.Log.d(TAG, "🔌 finishAutofillContext() wrapper called");
+    // Currently no-op in Flutter's implementation
   }
 
   @VisibleForTesting

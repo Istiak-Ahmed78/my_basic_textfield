@@ -129,101 +129,134 @@ public class MyBasicTextfieldPlugin implements FlutterPlugin, ActivityAware {
     android.util.Log.d(TAG, "MethodChannel destroyed");
   }
 
-  private void initializeTextInputPlugin() {
-    if (activity == null || flutterEngine == null) {
-      android.util.Log.e(TAG, "❌ Cannot initialize TextInputPlugin: activity or engine is null");
-      return;
-    }
+   private void initializeTextInputPlugin() {
+     if (activity == null || flutterEngine == null) {
+       android.util.Log.e(TAG, "❌ Cannot initialize TextInputPlugin: activity or engine is null");
+       return;
+     }
 
-    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
-    android.util.Log.d(TAG, "🔧 INITIALIZING TEXTINPUTPLUGIN");
-    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+     android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+     android.util.Log.d(TAG, "🔧 INITIALIZING TEXTINPUTPLUGIN");
+     android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
 
-    View rootView = activity.getWindow().getDecorView().getRootView();
-    android.util.Log.d(TAG, "✅ Root view obtained: " + rootView.getClass().getSimpleName());
+     View rootView = activity.getWindow().getDecorView().getRootView();
+     android.util.Log.d(TAG, "✅ Root view obtained: " + rootView.getClass().getSimpleName());
 
-    // ✅ FIXED: Access Flutter's SYSTEM TextInputChannel via reflection
-    // Instead of creating new channels, get them from the engine's internal system channels
-    TextInputChannel textInputChannel = null;
-    ScribeChannel scribeChannel = null;
+     // ✅ OFFICIAL PATTERN: Get system channels from the FlutterEngine via public API
+     TextInputChannel textInputChannel = flutterEngine.getTextInputChannel();
+     ScribeChannel scribeChannel = flutterEngine.getScribeChannel();
+     
+     if (textInputChannel != null) {
+       android.util.Log.d(TAG, "✅ Flutter's TextInputChannel obtained via public API");
+     } else {
+       android.util.Log.e(TAG, "❌ TextInputChannel is null - engine not properly initialized");
+       return;
+     }
+     
+     if (scribeChannel != null) {
+       android.util.Log.d(TAG, "✅ Flutter's ScribeChannel obtained via public API");
+     } else {
+       android.util.Log.e(TAG, "❌ ScribeChannel is null - engine not properly initialized");
+       return;
+     }
 
-    try {
-      android.util.Log.d(TAG, "📢 Accessing Flutter's system channels via reflection...");
-      
-      // Get the system channels from the FlutterEngine using reflection
-      // Flutter's FlutterEngine maintains system channels in private fields
-      java.lang.reflect.Field textInputChannelField = 
-          flutterEngine.getClass().getDeclaredField("textInputChannel");
-      textInputChannelField.setAccessible(true);
-      textInputChannel = (TextInputChannel) textInputChannelField.get(flutterEngine);
-      
-      if (textInputChannel != null) {
-        android.util.Log.d(TAG, "✅ Flutter's TextInputChannel obtained via reflection");
-      } else {
-        android.util.Log.w(TAG, "⚠️ TextInputChannel is null, will create new one");
-        textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
-        android.util.Log.d(TAG, "✅ New TextInputChannel created as fallback");
-      }
-      
-      java.lang.reflect.Field scribeChannelField = 
-          flutterEngine.getClass().getDeclaredField("scribeChannel");
-      scribeChannelField.setAccessible(true);
-      scribeChannel = (ScribeChannel) scribeChannelField.get(flutterEngine);
-      
-      if (scribeChannel != null) {
-        android.util.Log.d(TAG, "✅ Flutter's ScribeChannel obtained via reflection");
-      } else {
-        android.util.Log.w(TAG, "⚠️ ScribeChannel is null, will create new one");
-        scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
-        android.util.Log.d(TAG, "✅ New ScribeChannel created as fallback");
-      }
-      
-      android.util.Log.d(TAG, "✅ System channels obtained successfully");
-      
-    } catch (NoSuchFieldException e) {
-      android.util.Log.w(TAG, "⚠️ System channels not found via reflection, creating new ones");
-      android.util.Log.w(TAG, "   Error: " + e.getMessage());
-      
-      try {
-        textInputChannel = new TextInputChannel(flutterEngine.getDartExecutor());
-        scribeChannel = new ScribeChannel(flutterEngine.getDartExecutor());
-        android.util.Log.d(TAG, "✅ New channels created as fallback");
-      } catch (Exception fallbackError) {
-        android.util.Log.e(TAG, "❌ Failed to create channels: " + fallbackError.getMessage());
-        fallbackError.printStackTrace();
-      }
-    } catch (IllegalAccessException e) {
-      android.util.Log.e(TAG, "❌ Reflection access denied: " + e.getMessage());
-      e.printStackTrace();
-    }
+     android.util.Log.d(TAG, "📢 Getting PlatformViewsController...");
+     PlatformViewsController platformViewsController =
+         flutterEngine.getPlatformViewsController();
+     android.util.Log.d(TAG, "✅ PlatformViewsController obtained: " + (platformViewsController != null ? "not null" : "null"));
 
-    android.util.Log.d(TAG, "📢 Getting PlatformViewsController...");
-    PlatformViewsController platformViewsController =
-        flutterEngine.getPlatformViewsController();
-    android.util.Log.d(TAG, "✅ PlatformViewsController obtained: " + (platformViewsController != null ? "not null" : "null"));
+     android.util.Log.d(TAG, "📢 Getting PlatformViewsController2...");
+     PlatformViewsController2 platformViewsController2 =
+         flutterEngine.getPlatformViewsController2();
+     android.util.Log.d(TAG, "✅ PlatformViewsController2 obtained: " + (platformViewsController2 != null ? "not null" : "null"));
 
-    android.util.Log.d(TAG, "📢 Getting PlatformViewsController2...");
-    PlatformViewsController2 platformViewsController2 =
-        flutterEngine.getPlatformViewsController2();
-    android.util.Log.d(TAG, "✅ PlatformViewsController2 obtained: " + (platformViewsController2 != null ? "not null" : "null"));
+     // Create the TextInputPlugin
+     android.util.Log.d(TAG, "📢 Creating TextInputPlugin instance...");
+     android.util.Log.d(TAG, "  - rootView: " + rootView.getClass().getSimpleName());
+     android.util.Log.d(TAG, "  - textInputChannel: initialized");
+     android.util.Log.d(TAG, "  - scribeChannel: initialized");
+     
+     textInputPlugin =
+         new TextInputPlugin(
+             rootView,
+             textInputChannel,
+             scribeChannel,
+             platformViewsController,
+             platformViewsController2);
 
-    // Create the TextInputPlugin
-    android.util.Log.d(TAG, "📢 Creating TextInputPlugin instance...");
-    android.util.Log.d(TAG, "  - rootView: " + rootView.getClass().getSimpleName());
-    android.util.Log.d(TAG, "  - textInputChannel: " + (textInputChannel != null ? "initialized" : "null"));
-    android.util.Log.d(TAG, "  - scribeChannel: " + (scribeChannel != null ? "initialized" : "null"));
-    
-    textInputPlugin =
-        new TextInputPlugin(
-            rootView,
-            textInputChannel,
-            scribeChannel,
-            platformViewsController,
-            platformViewsController2);
+     // ✅ OFFICIAL PATTERN: Register TextInputMethodHandler with the channel
+     // This wires our TextInputPlugin to receive text input events from the framework
+     textInputChannel.setTextInputMethodHandler(
+         new io.flutter.embedding.engine.systemchannels.TextInputChannel.TextInputMethodHandler() {
+           @Override
+           public void show() {
+             android.util.Log.d(TAG, "🔊 show() called from framework");
+             textInputPlugin.show();
+           }
 
-    android.util.Log.d(TAG, "✅ TextInputPlugin created and initialized successfully!");
-    android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
-  }
+           @Override
+           public void hide() {
+             android.util.Log.d(TAG, "🔊 hide() called from framework");
+             textInputPlugin.hide();
+           }
+
+           @Override
+           public void requestAutofill() {
+             android.util.Log.d(TAG, "🔊 requestAutofill() called from framework");
+             textInputPlugin.requestAutofill();
+           }
+
+           @Override
+           public void setClient(int textInputClientId, 
+               io.flutter.embedding.engine.systemchannels.TextInputChannel.Configuration configuration) {
+             android.util.Log.d(TAG, "🔊 setClient() called from framework with clientId=" + textInputClientId);
+             textInputPlugin.setClient(textInputClientId, configuration);
+           }
+
+           @Override
+           public void setPlatformViewClient(int id, boolean usesVirtualDisplay) {
+             android.util.Log.d(TAG, "🔊 setPlatformViewClient() called from framework");
+             textInputPlugin.setPlatformViewClient(id, usesVirtualDisplay);
+           }
+
+           @Override
+           public void setEditableSizeAndTransform(double width, double height, double[] transform) {
+             android.util.Log.d(TAG, "🔊 setEditableSizeAndTransform() called from framework");
+             textInputPlugin.setEditableSizeAndTransform(width, height, transform);
+           }
+
+           @Override
+           public void setEditingState(
+               io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState editingState) {
+             android.util.Log.d(TAG, "🔊 setEditingState() called from framework");
+             textInputPlugin.setEditingState(editingState);
+           }
+
+           @Override
+           public void clearClient() {
+             android.util.Log.d(TAG, "🔊 clearClient() called from framework");
+             textInputPlugin.clearClient();
+           }
+
+           @Override
+           public void sendAppPrivateCommand(String action, android.os.Bundle data) {
+             android.util.Log.d(TAG, "🔊 sendAppPrivateCommand() called from framework");
+             textInputPlugin.sendAppPrivateCommand(action, data);
+           }
+
+            @Override
+            public void finishAutofillContext(boolean shouldSave) {
+              android.util.Log.d(TAG, "🔊 finishAutofillContext() called from framework");
+              textInputPlugin.finishAutofillContext(shouldSave);
+            }
+          });
+
+      // ✅ OFFICIAL PATTERN: Request existing input state after handler registration
+      textInputChannel.requestExistingInputState();
+
+      android.util.Log.d(TAG, "✅ TextInputPlugin created and registered successfully!");
+      android.util.Log.d(TAG, "═══════════════════════════════════════════════════════════");
+   }
 
   private void cleanupTextInputPlugin() {
     if (textInputPlugin != null) {
