@@ -1,5 +1,5 @@
 package com.example.my_basic_textfield_example
 
-import com.example.my_basic_textfield.MyFlutterActivity
+import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity : MyFlutterActivity()
+class MainActivity : FlutterActivity()

@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart' hide TextSelection, EditableText;
-import 'package:my_basic_textfield/src/widgets/editable_text.dart';
-import 'package:my_basic_textfield/src/services/text_editing.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextSelection;
+import 'package:my_basic_textfield/src/widgets/editable_text.dart'
+    as custom_text
+    show TextEdittingController, EditableText;
 
 void main() {
   debugPrint(
@@ -8,11 +10,10 @@ void main() {
   );
   debugPrint('║         MY BASIC TEXTFIELD - STARTING APP                  ║');
   debugPrint('║                                                            ║');
-  debugPrint('║ Logging enabled for:                                       ║');
-  debugPrint('║ - Focus & tap handling                                     ║');
-  debugPrint('║ - Text input connection lifecycle                          ║');
-  debugPrint('║ - Platform method invocations                              ║');
-  debugPrint('║ - Text editing events                                      ║');
+  debugPrint('║ Architecture:                                              ║');
+  debugPrint('║ - Flutter\'s built-in native text input (Java)             ║');
+  debugPrint('║ - Our custom EditableText widget (Dart)                   ║');
+  debugPrint('║ - Uses TextInput.attach() to connect to native pipeline    ║');
   debugPrint(
     '╚════════════════════════════════════════════════════════════╝\n',
   );
@@ -41,11 +42,10 @@ class TextFieldDemoPage extends StatefulWidget {
 }
 
 class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
-  late TextEdittingController _controller;
+  late custom_text.TextEdittingController _controller;
+  final FocusNode _focusNode = FocusNode();
   String _displayText = 'No text entered yet';
   String _selectionInfo = 'No selection';
-  String _keyboardStatus = 'Keyboard: Unknown';
-  String _cursorStatus = 'Cursor: Not visible';
   int _textChangeCount = 0;
   int _selectionChangeCount = 0;
 
@@ -54,10 +54,9 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
     debugPrint('📱 TextFieldDemoPage: initState() called');
     super.initState();
 
-    _controller = TextEdittingController(null);
+    _controller = custom_text.TextEdittingController(null);
     debugPrint('✅ TextEdittingController created');
 
-    // Listen to text changes
     _controller.addListener(() {
       debugPrint('\n🔄 ========== CONTROLLER LISTENER TRIGGERED ==========');
       debugPrint('📝 Text Change #${++_textChangeCount}');
@@ -65,13 +64,9 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
       debugPrint('📏 Text length: ${_controller.text.length}');
 
       final selection = _controller.selection;
-      debugPrint('🎯 Selection object: $selection');
-      debugPrint('   - baseOffset: ${selection.baseOffset}');
-      debugPrint('   - extentOffset: ${selection.extentOffset}');
-      debugPrint('   - start: ${selection.start}');
-      debugPrint('   - end: ${selection.end}');
-      debugPrint('   - isCollapsed: ${selection.isCollapsed}');
-      // debugPrint('   - hasSelection: ${selection.hasSelection}');
+      debugPrint(
+        '🎯 Selection: ${selection.baseOffset}-${selection.extentOffset}',
+      );
 
       setState(() {
         _displayText = _controller.text.isEmpty
@@ -80,16 +75,7 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
 
         _selectionInfo =
             'Cursor: ${selection.baseOffset} | '
-            'Selection: ${selection.start}-${selection.end} | '
-            'Collapsed: ${selection.isCollapsed}';
-
-        _cursorStatus = 'Cursor Position: ${selection.baseOffset}';
-        _selectionChangeCount++;
-
-        debugPrint('🎨 UI State updated');
-        debugPrint('   - _displayText: $_displayText');
-        debugPrint('   - _selectionInfo: $_selectionInfo');
-        debugPrint('   - _selectionChangeCount: $_selectionChangeCount');
+            'Selection: ${selection.start}-${selection.end}';
       });
       debugPrint('🔄 ========== LISTENER END ==========\n');
     });
@@ -128,7 +114,6 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
   void _selectAll() {
     debugPrint('\n📋 ========== SELECT ALL BUTTON PRESSED ==========');
     debugPrint('📝 Text: "${_controller.text}"');
-    debugPrint('📏 Text length: ${_controller.text.length}');
     debugPrint('🎯 Before selection: ${_controller.selection}');
 
     _controller.selection = TextSelection(
@@ -145,10 +130,7 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
     debugPrint('🎨 TextFieldDemoPage: build() called');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Basic TextField Demo'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('My Custom EditableText'), elevation: 0),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -157,9 +139,39 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
             children: [
               // Title
               Text(
-                'Custom Text Field Example',
+                'Custom EditableText Widget',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Architecture Note
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Our custom EditableText uses Flutter\'s built-in '
+                        'native text input pipeline via TextInput.attach(). '
+                        'This connects to Flutter\'s TextInputPlugin (Java) '
+                        '→ InputConnectionAdaptor → keyboard.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -184,24 +196,6 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _keyboardStatus,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Courier',
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _cursorStatus,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Courier',
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
                       'Text Changes: $_textChangeCount',
                       style: const TextStyle(
                         fontSize: 12,
@@ -223,35 +217,6 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
               ),
               const SizedBox(height: 24),
 
-              // Info Box
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  border: Border.all(color: Colors.blue.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Text Field Features:',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('✓ Blinking cursor'),
-                    const Text('✓ Text selection with handles'),
-                    const Text('✓ Copy/Paste/Cut functionality'),
-                    const Text('✓ Long-press to select'),
-                    const Text('✓ Tap to position cursor'),
-                    const Text('✓ Keyboard integration'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Text Field Label
               Text(
                 'Enter Text:',
@@ -261,37 +226,23 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
               ),
               const SizedBox(height: 8),
 
-              // Custom Text Field
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade200,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              // Our Custom EditableText Widget
+              custom_text.EditableText(
+                controller: _controller,
+                focusNode: _focusNode,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontFamily: 'Roboto',
                 ),
-                child: EditableText(
-                  controller: _controller,
-                  focusNode: FocusNode(),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontFamily: 'Roboto',
-                  ),
-                  cursorColor: Colors.blue,
-                  cursorWidth: 2,
-                  obscureText: false,
-                  isMultiline: false,
-                  onChanged: (value) {
-                    debugPrint('🎯 EditableText.onChanged() called');
-                    debugPrint('   - New value: "$value"');
-                    debugPrint('   - Value length: ${value.length}');
-                  },
-                ),
+                cursorColor: Colors.blue,
+                cursorWidth: 2,
+                obscureText: false,
+                isMultiline: false,
+                onChanged: (value) {
+                  debugPrint('🎯 EditableText.onChanged() called');
+                  debugPrint('   - New value: "$value"');
+                },
               ),
               const SizedBox(height: 16),
 
@@ -420,11 +371,9 @@ class _TextFieldDemoPageState extends State<TextFieldDemoPage> {
                     const SizedBox(height: 8),
                     const Text('1. Tap in the text field to focus'),
                     const Text('2. Type using your keyboard'),
-                    const Text('3. Long-press to select text'),
-                    const Text('4. Drag handles to adjust selection'),
-                    const Text('5. Use toolbar to copy/paste/cut'),
+                    const Text('3. Watch logs for text input events'),
                     const Text(
-                      '6. Use buttons below to test programmatic control',
+                      '4. Use buttons below to test programmatic control',
                     ),
                   ],
                 ),
