@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   debugPrint('\n========================================');
@@ -66,13 +65,15 @@ class _TestPageState extends State<TestPage> {
               padding: const EdgeInsets.all(12),
               color: Colors.yellow.shade100,
               child: const Text(
-                'This uses Flutter\'s BUILT-IN EditableText from flutter/material.dart\n'
-                'Type "hello" then backspace - does it work?',
+                'This uses Flutter\'s BUILT-IN EditableText\n'
+                'Type "hello" then backspace - does it work?\n\n'
+                'If backspace works here, our custom code has an issue.\n'
+                'If backspace does NOT work, the issue is the keyboard/native side.',
               ),
             ),
             const SizedBox(height: 16),
             const Text(
-              'FLUTTER\'S OFFICIAL EditableText:',
+              'FLUTTER\'S OFFICIAL TextField:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
